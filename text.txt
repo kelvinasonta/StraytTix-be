@@ -1,0 +1,736 @@
+I think we should go one level above a normal “build plan.”
+
+We’re going to create what a startup or engineering team would use internally: a Product Requirements Document (PRD) combined with an Engineering Roadmap.
+
+⸻
+
+EventOS Build Plan v1.0
+
+Project Type: SaaS Platform
+
+Architecture: API-First Modular Monolith
+
+Backend: Laravel 12
+
+Frontend: React
+
+Development Methodology: Agile (Sprint-based)
+
+Target Duration: 5–6 Months
+
+Status: Planning
+
+⸻
+
+1. Vision
+
+Build a modern event management platform that allows organizations to create, manage, sell tickets for, and analyze events from one dashboard.
+
+The platform should support:
+
+* Conferences
+* Concerts
+* Meetups
+* Church events
+* Universities
+* Workshops
+* Webinars
+* Corporate events
+
+⸻
+
+2. Success Criteria
+
+By MVP completion:
+
+✅ Organizations can register
+
+✅ Team members can collaborate
+
+✅ Events can be created
+
+✅ Tickets can be sold
+
+✅ Payments work
+
+✅ QR tickets generated
+
+✅ Attendees checked in
+
+✅ Analytics available
+
+⸻
+
+3. Development Philosophy
+
+We are not building:
+
+Another CRUD Laravel app.
+
+We’re building:
+
+A production-ready SaaS.
+
+Every module must satisfy:
+
+* Scalability
+* Maintainability
+* Testability
+* Security
+* Extensibility
+
+⸻
+
+4. Technology Stack
+
+Backend
+
+* Laravel 12
+* PHP 8.4
+* PostgreSQL
+* Redis
+* Laravel Sanctum
+* Laravel Reverb
+* Horizon
+* Telescope
+
+⸻
+
+Frontend
+
+* React
+* Vite
+* TailwindCSS
+* TanStack Query
+* Zustand
+* React Router
+
+⸻
+
+Infrastructure
+
+* Docker
+* GitHub Actions
+* Nginx
+* S3 Storage
+* Mailpit
+
+⸻
+
+Payments
+
+* Paystack
+* Flutterwave
+* Stripe (Phase 2)
+
+⸻
+
+AI
+
+* OpenAI
+* Gemini
+
+⸻
+
+5. Architecture
+
+React
+      │
+      ▼
+REST API
+Laravel
+      │
+      ▼
+Business Layer
+      │
+      ▼
+Database
+      │
+      ▼
+Redis
+
+Everything communicates through the API.
+
+⸻
+
+6. Development Phases
+
+⸻
+
+Phase 0
+
+Planning
+
+Duration
+
+1 Week
+
+Deliverables
+
+* PRD
+* Roadmap
+* Database Design
+* ERD
+* API Design
+* Folder Structure
+* UI Wireframes
+* Sprint Backlog
+
+Status
+
+Current
+
+⸻
+
+Phase 1
+
+Foundation
+
+Duration
+
+1 Week
+
+Tasks
+
+Project setup
+
+Docker
+
+Git
+
+CI/CD
+
+Laravel
+
+Redis
+
+PostgreSQL
+
+Mailpit
+
+Sanctum
+
+API Versioning
+
+Testing
+
+Logging
+
+Error Handling
+
+OpenAPI
+
+Deliverables
+
+Working backend foundation
+
+⸻
+
+Phase 2
+
+Authentication
+
+Duration
+
+1 Week
+
+Features
+
+Registration
+
+Login
+
+Logout
+
+Password Reset
+
+Email Verification
+
+Refresh Tokens
+
+Profile
+
+Sessions
+
+Acceptance Criteria
+
+Users can authenticate securely.
+
+⸻
+
+Phase 3
+
+Organizations
+
+Duration
+
+1 Week
+
+Features
+
+Organization
+
+Members
+
+Invitations
+
+Roles
+
+Permissions
+
+Branding
+
+Subscription
+
+Settings
+
+Acceptance Criteria
+
+Organizations fully operational.
+
+⸻
+
+Phase 4
+
+Event Management
+
+Duration
+
+2 Weeks
+
+Features
+
+Create Event
+
+Edit Event
+
+Delete Event
+
+Publish
+
+Archive
+
+Cancel
+
+Duplicate
+
+Venue
+
+Categories
+
+Tags
+
+Media
+
+Agenda
+
+FAQ
+
+Acceptance Criteria
+
+Organizations can fully manage events.
+
+⸻
+
+Phase 5
+
+Ticketing
+
+Duration
+
+2 Weeks
+
+Features
+
+Ticket Types
+
+Inventory
+
+Capacity
+
+Pricing
+
+Early Bird
+
+VIP
+
+Discounts
+
+Coupons
+
+Acceptance Criteria
+
+Events can sell multiple ticket types.
+
+⸻
+
+Phase 6
+
+Orders
+
+Duration
+
+1 Week
+
+Features
+
+Cart
+
+Checkout
+
+Invoices
+
+Receipts
+
+Order History
+
+Acceptance Criteria
+
+Orders created successfully.
+
+⸻
+
+Phase 7
+
+Payments
+
+Duration
+
+2 Weeks
+
+Features
+
+Paystack
+
+Flutterwave
+
+Webhook Verification
+
+Refunds
+
+Payment Logs
+
+Acceptance Criteria
+
+Payments production-ready.
+
+⸻
+
+Phase 8
+
+QR Tickets
+
+Duration
+
+1 Week
+
+Features
+
+QR Generation
+
+Ticket Validation
+
+Duplicate Prevention
+
+Download Ticket
+
+Acceptance Criteria
+
+Tickets generated automatically.
+
+⸻
+
+Phase 9
+
+Check-In
+
+Duration
+
+1 Week
+
+Features
+
+Scanner
+
+Manual Check-in
+
+Offline Queue
+
+Attendance Dashboard
+
+Acceptance Criteria
+
+Staff can validate attendees.
+
+⸻
+
+Phase 10
+
+Notifications
+
+Duration
+
+1 Week
+
+Email
+
+SMS
+
+WhatsApp
+
+Push
+
+Reminder
+
+Cancellation
+
+Acceptance Criteria
+
+Notifications automated.
+
+⸻
+
+Phase 11
+
+Analytics
+
+Duration
+
+2 Weeks
+
+Revenue
+
+Attendance
+
+Sales
+
+Refunds
+
+Reports
+
+Charts
+
+Export
+
+Acceptance Criteria
+
+Dashboard fully operational.
+
+⸻
+
+Phase 12
+
+AI
+
+Duration
+
+2 Weeks
+
+Generate
+
+Descriptions
+
+Emails
+
+Social Posts
+
+FAQs
+
+Schedules
+
+Acceptance Criteria
+
+AI assistant integrated.
+
+⸻
+
+Phase 13
+
+Production
+
+Duration
+
+2 Weeks
+
+Docker
+
+Deployment
+
+Monitoring
+
+Caching
+
+Performance
+
+Security
+
+Rate Limiting
+
+Optimization
+
+Acceptance Criteria
+
+Production deployment complete.
+
+⸻
+
+7. Module Breakdown
+
+Authentication
+Organizations
+Users
+Roles
+Permissions
+Events
+Venues
+Speakers
+Sponsors
+Schedules
+Ticket Types
+Orders
+Payments
+Attendees
+Check-In
+Analytics
+Notifications
+Settings
+Administration
+
+⸻
+
+8. Sprint Plan
+
+Sprint 1
+
+Foundation
+
+Authentication
+
+Organization
+
+⸻
+
+Sprint 2
+
+Events
+
+Venue
+
+Categories
+
+Media
+
+⸻
+
+Sprint 3
+
+Ticketing
+
+Orders
+
+Checkout
+
+⸻
+
+Sprint 4
+
+Payments
+
+QR
+
+Check-in
+
+⸻
+
+Sprint 5
+
+Analytics
+
+Notifications
+
+Reports
+
+⸻
+
+Sprint 6
+
+AI
+
+Production
+
+Deployment
+
+Documentation
+
+⸻
+
+9. Testing Strategy
+
+Every module must include:
+
+* Unit Tests
+* Feature Tests
+* API Tests
+* Authorization Tests
+* Validation Tests
+* Integration Tests
+
+No feature is considered complete without tests.
+
+⸻
+
+10. Documentation
+
+We’ll maintain documentation throughout development:
+
+* Product Requirements Document (PRD)
+* Architecture Decision Records (ADRs)
+* Entity Relationship Diagram (ERD)
+* API Documentation (OpenAPI)
+* Sequence Diagrams
+* Deployment Guide
+* Contributing Guide
+* User Guide
+
+⸻
+
+11. GitHub Project Structure
+
+📦 eventos
+├── eventos-api
+├── eventos-web
+├── eventos-docs
+├── mobile-app (future)
+├── checkin-app (future)
+
+⸻
+
+12. Engineering Standards
+
+We’ll follow these standards consistently:
+
+* API-first development
+* Domain-Driven Design (DDD) concepts
+* Modular Monolith architecture
+* SOLID principles
+* PSR-12 coding standard
+* Test-Driven Development (where practical)
+* OpenAPI specification
+* Conventional Commits
+* Feature branch workflow
+* Pull-request-based development
+
+⸻
+
+Final Recommendation: Make It Recruiter-Ready
+
+Since this project is intended to become the centerpiece of your portfolio, I recommend treating it like a real commercial product rather than a coding exercise. That means every phase should end with:
+
+* A deployed demo environment
+* Updated API documentation
+* Passing automated tests
+* A changelog
+* A release tag (v0.1.0, v0.2.0, etc.)
+* Architecture notes explaining key technical decisions
+
+By the time you finish, you won’t just have an event platform—you’ll have a portfolio that demonstrates how you design, build, test, document, and ship software like a professional engineering team.

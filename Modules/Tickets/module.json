@@ -1,0 +1,11 @@
+{
+    "name": "Tickets",
+    "alias": "tickets",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Tickets\\App\\Providers\\TicketsServiceProvider"
+    ],
+    "files": []
+}
