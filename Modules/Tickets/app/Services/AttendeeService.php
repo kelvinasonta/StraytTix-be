@@ -135,4 +135,96 @@ class AttendeeService
 
         return $ticket->fresh(['ticketType', 'user', 'order']);
     }
+
+    /**
+     * Undo check-in for an attendee using ticket number, QR code, or ticket uuid.
+     */
+    public function undoCheckInAttendee(Organizer $organizer, string $eventUuid, string $identifier): Ticket
+    {
+        $event = Event::where('uuid', $eventUuid)->where('organizer_id', $organizer->id)->firstOrFail();
+
+        $ticket = Ticket::with(['ticketType', 'user', 'order'])
+            ->where('event_id', $event->id)
+            ->where(function ($q) use ($identifier) {
+                $q->where('ticket_number', $identifier)
+                    ->orWhere('qr_code', $identifier)
+                    ->orWhere('uuid', $identifier);
+            })
+            ->first();
+
+        if (! $ticket) {
+            throw new TicketCheckInException('Invalid ticket for this event.');
+        }
+
+        if (in_array(strtolower($ticket->status), ['cancelled', 'refunded', 'void'])) {
+            throw new TicketCheckInException("Ticket is invalid or {$ticket->status}.");
+        }
+
+        if ($ticket->checked_in_at === null) {
+            throw new TicketCheckInException('Ticket is not currently checked in.');
+        }
+
+        $ticket->update([
+            'checked_in_at' => null,
+            'status' => 'valid',
+        ]);
+
+        return $ticket->fresh(['ticketType', 'user', 'order']);
+    }
+
+    /**
+     * Get live gate check-in statistics for an event.
+     *
+     * @return array{
+     *     total_tickets: int,
+     *     checked_in_count: int,
+     *     pending_count: int,
+     *     check_in_rate: float,
+     *     recent_check_ins: array<int, array{
+     *         ticket_number: string,
+     *         attendee_name: string|null,
+     *         attendee_email: string|null,
+     *         ticket_tier: string,
+     *         checked_in_at: string|null
+     *     }>
+     * }
+     */
+    public function getEventGateStats(Organizer $organizer, string $eventUuid): array
+    {
+        $event = Event::where('uuid', $eventUuid)->where('organizer_id', $organizer->id)->firstOrFail();
+
+        $query = Ticket::where('event_id', $event->id);
+
+        $totalTickets = (clone $query)->count();
+        $checkedInCount = (clone $query)->whereNotNull('checked_in_at')->count();
+        $pendingCount = (clone $query)->whereNull('checked_in_at')->count();
+
+        $checkInRate = $totalTickets > 0
+            ? round(($checkedInCount / $totalTickets) * 100, 2)
+            : 0.0;
+
+        $recentCheckIns = Ticket::with('ticketType')
+            ->where('event_id', $event->id)
+            ->whereNotNull('checked_in_at')
+            ->orderByDesc('checked_in_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Ticket $ticket) => [
+                'ticket_number' => $ticket->ticket_number,
+                'attendee_name' => $ticket->attendee_name,
+                'attendee_email' => $ticket->attendee_email,
+                'ticket_tier' => $ticket->ticketType?->name ?? 'General',
+                'checked_in_at' => $ticket->checked_in_at?->toISOString(),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'total_tickets' => $totalTickets,
+            'checked_in_count' => $checkedInCount,
+            'pending_count' => $pendingCount,
+            'check_in_rate' => $checkInRate,
+            'recent_check_ins' => $recentCheckIns,
+        ];
+    }
 }

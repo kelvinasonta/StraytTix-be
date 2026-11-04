@@ -31,6 +31,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::middleware(['organizer.role:owner,admin,manager,staff'])->prefix('organizers/{organizerUuid}/events/{eventUuid}')->group(function () {
         Route::get('attendees', [AttendeeController::class, 'index']);
         Route::get('attendees/export', [AttendeeController::class, 'export']);
+        Route::post('attendees/{ticketUuid}/undo-check-in', [AttendeeController::class, 'undoCheckInByUuid']);
         Route::post('check-in', [AttendeeController::class, 'checkIn']);
+        Route::post('check-in/undo', [AttendeeController::class, 'undoCheckIn']);
+        Route::get('check-in/stats', [AttendeeController::class, 'stats']);
     });
 });
