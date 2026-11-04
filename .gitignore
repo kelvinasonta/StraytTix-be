@@ -28,7 +28,6 @@ Homestead.yaml
 Thumbs.db
 
 /dist/
-/docs/
 text.txt
 *.pdf
 

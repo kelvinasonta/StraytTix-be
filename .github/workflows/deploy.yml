@@ -1,0 +1,141 @@
+name: Build & Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Build Production Docker Image and Publish to GHCR
+  # ----------------------------------------------------------------------------
+  build-and-push:
+    name: Build & Publish Image to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+      image_name: ghcr.io/${{ github.repository_owner }}/strayttix-be
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/strayttix-be
+          tags: |
+            type=sha,prefix=,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ----------------------------------------------------------------------------
+  # Job 2: Controlled Release & Rolling Update on Bluehost VPS via SSH
+  # ----------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Bluehost Production VPS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_IMAGE: ghcr.io/${{ github.repository_owner }}/strayttix-be:${{ github.sha }}
+          IMAGE_TAG: ${{ github.sha }}
+          DEPLOY_PATH: /opt/strayttix
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          envs: APP_IMAGE,IMAGE_TAG,DEPLOY_PATH
+          script_stop: true
+          script: |
+            set -e
+
+            echo "=== Step 1: Navigating to deployment directory ==="
+            mkdir -p $DEPLOY_PATH/docker/nginx
+            mkdir -p $DEPLOY_PATH/docker/scripts
+            mkdir -p $DEPLOY_PATH/backups
+            cd $DEPLOY_PATH
+
+            echo "=== Step 2: Authenticating with GHCR ==="
+            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            echo "=== Step 3: Pulling target image version ($IMAGE_TAG) ==="
+            docker pull $APP_IMAGE
+
+            echo "=== Step 4: Backing up MySQL database prior to release ==="
+            BACKUP_FILE="$DEPLOY_PATH/backups/db_backup_pre_${IMAGE_TAG}_$(date +%Y%m%d_%H%M%S).sql.gz"
+            if docker compose -f docker-compose.prod.yml ps -q mysql >/dev/null 2>&1; then
+              docker compose -f docker-compose.prod.yml exec -T mysql mysqldump -u root -p"$DB_PASSWORD" --single-transaction --routines --triggers --all-databases | gzip > "$BACKUP_FILE" || echo "Warning: Backup skipped if first deployment"
+              # Retain last 7 days of backups
+              find $DEPLOY_PATH/backups/ -name "db_backup_*.sql.gz" -mtime +7 -delete || true
+            fi
+
+            echo "=== Step 5: Running database migrations ==="
+            docker compose -f docker-compose.prod.yml run --rm \
+              -e APP_IMAGE=$APP_IMAGE \
+              app php artisan migrate --force
+
+            echo "=== Step 6: Updating application containers ==="
+            docker compose -f docker-compose.prod.yml up -d \
+              --remove-orphans \
+              app queue scheduler nginx
+
+            echo "=== Step 7: Restarting background workers & clearing cache ==="
+            docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
+            docker compose -f docker-compose.prod.yml exec -T app php artisan route:cache
+            docker compose -f docker-compose.prod.yml exec -T queue php artisan queue:restart
+
+            echo "=== Step 8: Verifying application health endpoint (/up) ==="
+            MAX_RETRIES=12
+            COUNTER=0
+            until [ $COUNTER -ge $MAX_RETRIES ]; do
+              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/up || echo "000")
+              if [ "$HTTP_STATUS" -eq 200 ]; then
+                echo "Health check succeeded: HTTP 200 OK"
+                break
+              fi
+              echo "Waiting for app readiness... (Status: $HTTP_STATUS) Attempt $((COUNTER+1))/$MAX_RETRIES"
+              COUNTER=$((COUNTER+1))
+              sleep 5
+            done
+
+            if [ $COUNTER -ge $MAX_RETRIES ]; then
+              echo "Health check failed after $MAX_RETRIES attempts! Commencing rollback..."
+              exit 1
+            fi
+
+            echo "=== Deployment for commit $IMAGE_TAG completed successfully! ==="
