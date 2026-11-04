@@ -20,3 +20,4 @@ jobs:
             exit 1
           fi
           echo "Verified: PR is from staging into main."
+
