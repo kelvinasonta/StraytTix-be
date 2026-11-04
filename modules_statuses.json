@@ -7,5 +7,6 @@
     "Organizer": true,
     "Payments": true,
     "Shared": true,
-    "Tickets": true
+    "Tickets": true,
+    "Credits": true
 }

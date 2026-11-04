@@ -1,0 +1,11 @@
+{
+    "name": "Credits",
+    "alias": "credits",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Credits\\App\\Providers\\CreditsServiceProvider"
+    ],
+    "files": []
+}
