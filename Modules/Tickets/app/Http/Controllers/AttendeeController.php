@@ -78,4 +78,64 @@ class AttendeeController extends Controller
             return ApiResponse::error($e->getMessage(), 422);
         }
     }
+
+    /**
+     * Undo check-in via request body identifier (ticket number, QR code, or UUID).
+     */
+    public function undoCheckIn(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'identifier' => 'required|string',
+        ]);
+
+        $organizer = $request->attributes->get('active_organizer')
+            ?? Organizer::where('uuid', $organizerUuid)->firstOrFail();
+
+        try {
+            $ticket = $this->attendeeService->undoCheckInAttendee($organizer, $eventUuid, $validated['identifier']);
+
+            return ApiResponse::success(
+                'Attendee check-in reversed successfully.',
+                new TicketResource($ticket)
+            );
+        } catch (TicketCheckInException $e) {
+            return ApiResponse::error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Undo check-in via ticket UUID route parameter.
+     */
+    public function undoCheckInByUuid(Request $request, string $organizerUuid, string $eventUuid, string $ticketUuid): JsonResponse
+    {
+        $organizer = $request->attributes->get('active_organizer')
+            ?? Organizer::where('uuid', $organizerUuid)->firstOrFail();
+
+        try {
+            $ticket = $this->attendeeService->undoCheckInAttendee($organizer, $eventUuid, $ticketUuid);
+
+            return ApiResponse::success(
+                'Attendee check-in reversed successfully.',
+                new TicketResource($ticket)
+            );
+        } catch (TicketCheckInException $e) {
+            return ApiResponse::error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Get live gate statistics for event check-in.
+     */
+    public function stats(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
+    {
+        $organizer = $request->attributes->get('active_organizer')
+            ?? Organizer::where('uuid', $organizerUuid)->firstOrFail();
+
+        $stats = $this->attendeeService->getEventGateStats($organizer, $eventUuid);
+
+        return ApiResponse::success(
+            'Gate statistics retrieved successfully.',
+            $stats
+        );
+    }
 }
