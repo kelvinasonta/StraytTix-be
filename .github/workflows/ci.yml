@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - staging
   pull_request:
     branches:
       - main
+      - staging
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -90,3 +92,4 @@ jobs:
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
         run: php artisan test --compact
+

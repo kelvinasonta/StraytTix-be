@@ -87,6 +87,14 @@ vendor/bin/pint --format agent
 
 ---
 
+## Git Workflow & Branching Strategy
+
+- **`main`**: Production-only branch. Direct commits and direct PRs from feature branches to `main` are strictly prohibited.
+- **`staging`**: Integration and pre-release branch. All feature branches and PRs must target `staging`.
+- **Releases**: PRs into `main` are only permitted from `staging` after quality checks and staging testing pass.
+
+---
+
 ## License
 
 Proprietary. All rights reserved by Strayt Tix.

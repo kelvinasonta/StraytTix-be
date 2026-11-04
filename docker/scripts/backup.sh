@@ -58,3 +58,4 @@ echo "==> Pruning backups older than ${RETENTION_DAYS} days..."
 find "${BACKUP_DIR}" -name "db_backup_*.sql.gz" -mtime +"${RETENTION_DAYS}" -exec rm -f {} + || true
 
 echo "==> Backup operation completed."
+

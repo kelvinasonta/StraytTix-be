@@ -1,0 +1,22 @@
+name: Validate Pull Request Source
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-pr-source:
+    name: Enforce Staging-only PRs to Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Base and Head Branches
+        run: |
+          echo "Base branch: ${{ github.base_ref }}"
+          echo "Head branch: ${{ github.head_ref }}"
+          if [ "${{ github.head_ref }}" != "staging" ]; then
+            echo "::error::Direct PRs to 'main' are prohibited! PRs into 'main' must only originate from 'staging'."
+            echo "Please submit your PR targeting the 'staging' branch instead."
+            exit 1
+          fi
+          echo "Verified: PR is from staging into main."

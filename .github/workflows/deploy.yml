@@ -139,3 +139,4 @@ jobs:
             fi
 
             echo "=== Deployment for commit $IMAGE_TAG completed successfully! ==="
+
