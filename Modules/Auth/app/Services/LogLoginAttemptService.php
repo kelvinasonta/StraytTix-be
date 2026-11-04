@@ -16,7 +16,7 @@ class LogLoginAttemptService
 
         $location = Location::get($ip);
 
-        if ($user) {
+        if ($user && $status) {
             $user->last_login_at = now();
             $user->last_login_ip = $ip;
             $user->save();

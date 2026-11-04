@@ -3,25 +3,22 @@
 namespace Modules\Auth\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class LogoutController extends Controller
 {
-    public function store()
+    public function store(Request $request): JsonResponse
     {
-        // Invalidate api token
-        if (auth()->user()) {
-            auth()->user()->currentAccessToken()->delete();
+        $user = $request->user();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Logged out successfully.',
-            ], 200);
+        if ($user) {
+            $user->currentAccessToken()?->delete();
+
+            return ApiResponse::success('Logged out successfully.');
         }
 
-        return response()->json([
-            'status' => 'error',
-            'message' => 'No authenticated user found.',
-        ], 401);
-
+        return ApiResponse::error('No authenticated user found.', 401, 'UNAUTHENTICATED');
     }
 }

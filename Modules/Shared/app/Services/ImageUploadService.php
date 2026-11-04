@@ -196,8 +196,19 @@ class ImageUploadService implements ImageUploadServiceInterface
     public function delete(string $path, ?string $disk = null): bool
     {
         $targetDisk = $disk ?? config('shared.images.default_disk', 'public');
+        $sanitizedPath = $this->sanitizeStoragePath($path);
 
-        return Storage::disk($targetDisk)->delete($path);
+        if ($sanitizedPath === null) {
+            return false;
+        }
+
+        $storage = Storage::disk($targetDisk);
+
+        if (! $storage->exists($sanitizedPath)) {
+            return false;
+        }
+
+        return $storage->delete($sanitizedPath);
     }
 
     /**
@@ -206,8 +217,13 @@ class ImageUploadService implements ImageUploadServiceInterface
     public function exists(string $path, ?string $disk = null): bool
     {
         $targetDisk = $disk ?? config('shared.images.default_disk', 'public');
+        $sanitizedPath = $this->sanitizeStoragePath($path);
 
-        return Storage::disk($targetDisk)->exists($path);
+        if ($sanitizedPath === null) {
+            return false;
+        }
+
+        return Storage::disk($targetDisk)->exists($sanitizedPath);
     }
 
     /**
@@ -216,8 +232,13 @@ class ImageUploadService implements ImageUploadServiceInterface
     public function getUrl(string $path, ?string $disk = null): string
     {
         $targetDisk = $disk ?? config('shared.images.default_disk', 'public');
+        $sanitizedPath = $this->sanitizeStoragePath($path);
 
-        return Storage::disk($targetDisk)->url($path);
+        if ($sanitizedPath === null) {
+            throw ImageUploadException::invalidPath($path);
+        }
+
+        return Storage::disk($targetDisk)->url($sanitizedPath);
     }
 
     /**
@@ -226,13 +247,37 @@ class ImageUploadService implements ImageUploadServiceInterface
     public function getTemporaryUrl(string $path, DateTimeInterface|int $expiration, ?string $disk = null): string
     {
         $targetDisk = $disk ?? config('shared.images.default_disk', 'public');
+        $sanitizedPath = $this->sanitizeStoragePath($path);
+
+        if ($sanitizedPath === null) {
+            throw ImageUploadException::invalidPath($path);
+        }
+
         $storage = Storage::disk($targetDisk);
 
         if (method_exists($storage, 'temporaryUrl')) {
-            return $storage->temporaryUrl($path, $expiration);
+            return $storage->temporaryUrl($sanitizedPath, $expiration);
         }
 
-        return $storage->url($path);
+        return $storage->url($sanitizedPath);
+    }
+
+    /**
+     * Sanitize and validate storage relative path to prevent directory traversal attacks.
+     */
+    protected function sanitizeStoragePath(string $path): ?string
+    {
+        if (str_contains($path, '..') || str_contains($path, "\0")) {
+            return null;
+        }
+
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
+
+        if ($normalized === '' || str_starts_with($normalized, '.') || str_contains($normalized, '//')) {
+            return null;
+        }
+
+        return $normalized;
     }
 
     /**

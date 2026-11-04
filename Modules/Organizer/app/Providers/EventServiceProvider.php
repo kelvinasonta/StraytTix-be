@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Organizer\App\Providers;
+namespace Modules\Organizer\app\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\Organizer\app\Events\OrganizerInvitationCreatedEvent;

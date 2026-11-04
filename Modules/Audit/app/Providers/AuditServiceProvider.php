@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Audit\App\Providers;
+namespace Modules\Audit\app\Providers;
 
 use Modules\Audit\app\Services\AuditService;
 use Nwidart\Modules\Support\ModuleServiceProvider;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Auth\App\Models;
+namespace Modules\Auth\app\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,11 +21,14 @@ class EmailVerification extends Model
         'last_sent_at',
     ];
 
-    protected $casts = [
-        'expires_at' => 'datetime',
-        'verified_at' => 'datetime',
-        'last_sent_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'expires_at' => 'datetime',
+            'verified_at' => 'datetime',
+            'last_sent_at' => 'datetime',
+        ];
+    }
 
     protected $hidden = [
         'token',

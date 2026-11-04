@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "strayttix/backend",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Strayt Tix - High-performance modular ticketing and event operations backend API.",
     "keywords": [
         "laravel",
         "framework"
@@ -15,6 +15,7 @@
         "laravel/pennant": "^1.24",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "nwidart/laravel-modules": "^13.0",
         "predis/predis": "^3.5",
         "stevebauman/location": "^7.6"

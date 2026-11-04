@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Auth\App\Http\Middleware;
+namespace Modules\Auth\app\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

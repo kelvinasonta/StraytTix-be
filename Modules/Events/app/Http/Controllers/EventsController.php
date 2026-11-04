@@ -4,6 +4,7 @@ namespace Modules\Events\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Events\app\DTOs\EventCustomQuestionDTO;
 use Modules\Events\app\DTOs\EventDTO;
@@ -26,7 +27,7 @@ class EventsController extends Controller
         protected EventService $eventService
     ) {}
 
-    public function index(Request $request, string $organizerUuid)
+    public function index(Request $request, string $organizerUuid): JsonResponse
     {
         $organizer = $request->attributes->get('active_organizer');
         $requesterRole = $request->attributes->get('active_organizer_role');
@@ -56,7 +57,7 @@ class EventsController extends Controller
     /**
      * Store a newly created event for an organizer.
      */
-    public function store(StoreEventRequest $request, string $organizerUuid)
+    public function store(StoreEventRequest $request, string $organizerUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -112,7 +113,7 @@ class EventsController extends Controller
     /**
      * Show the specified organizer event.
      */
-    public function show(Request $request, string $organizerUuid, string $eventUuid)
+    public function show(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -128,7 +129,7 @@ class EventsController extends Controller
     /**
      * Update the specified organizer event.
      */
-    public function update(UpdateEventRequest $request, string $organizerUuid, string $eventUuid)
+    public function update(UpdateEventRequest $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -149,7 +150,7 @@ class EventsController extends Controller
     /**
      * Remove the specified organizer event.
      */
-    public function destroy(Request $request, string $organizerUuid, string $eventUuid)
+    public function destroy(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -162,7 +163,7 @@ class EventsController extends Controller
     /**
      * Publish an organizer event.
      */
-    public function publish(Request $request, string $organizerUuid, string $eventUuid)
+    public function publish(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -175,7 +176,7 @@ class EventsController extends Controller
         );
     }
 
-    public function unpublish(Request $request, string $organizerUuid, string $eventUuid)
+    public function unpublish(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -188,7 +189,7 @@ class EventsController extends Controller
         );
     }
 
-    public function duplicate(Request $request, string $organizerUuid, string $eventUuid)
+    public function duplicate(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -202,7 +203,7 @@ class EventsController extends Controller
         );
     }
 
-    public function stats(Request $request, string $organizerUuid, string $eventUuid)
+    public function stats(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -215,7 +216,7 @@ class EventsController extends Controller
         );
     }
 
-    public function archive(Request $request, string $organizerUuid, string $eventUuid)
+    public function archive(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -228,7 +229,7 @@ class EventsController extends Controller
         );
     }
 
-    public function cancel(Request $request, string $organizerUuid, string $eventUuid)
+    public function cancel(Request $request, string $organizerUuid, string $eventUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -244,7 +245,7 @@ class EventsController extends Controller
     /**
      * Public explore events endpoint.
      */
-    public function explore(Request $request)
+    public function explore(Request $request): JsonResponse
     {
         $events = $this->eventService->getPublicEvents($request->only([
             'search',
@@ -262,7 +263,7 @@ class EventsController extends Controller
     /**
      * Public single event details by slug.
      */
-    public function showPublic(string $slug)
+    public function showPublic(string $slug): JsonResponse
     {
         $event = $this->eventService->getPublicEventBySlug($slug);
 

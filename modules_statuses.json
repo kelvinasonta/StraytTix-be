@@ -1,16 +1,11 @@
 {
-    "Auth": true,
     "Admin": true,
     "Audit": true,
-    "Resource": true,
-    "UserResource": true,
+    "Auth": true,
+    "Events": true,
     "Notification": true,
     "Organizer": true,
-    "Event": true,
-    "Events": true,
-    "Migration": true,
-    "CreateEventLocation": true,
-    "Tickets": true,
     "Payments": true,
-    "Shared": true
+    "Shared": true,
+    "Tickets": true
 }

@@ -20,6 +20,9 @@ class LoginUserAction
         $user = User::where('email', $dto->email)->first();
 
         if (! $user) {
+
+            $this->logLoginAttempt(null, $dto->email, false, $meta['ip'], $meta['userAgent']);
+
             throw new InvalidCredentialsException;
         }
 
@@ -29,25 +32,24 @@ class LoginUserAction
 
         if (! Hash::check($dto->password, $user->password)) {
 
-            LoginAttemptEvent::dispatch(
-                $user,
-                $dto->email,
-                false,
-                $meta['ip'],
-                $meta['userAgent']
-            );
+            $this->logLoginAttempt($user, $dto->email, false, $meta['ip'], $meta['userAgent']);
 
             throw new InvalidCredentialsException;
         }
 
-        LoginAttemptEvent::dispatch(
-            $user,
-            $dto->email,
-            true,
-            $meta['ip'],
-            $meta['userAgent']
-        );
+        $this->logLoginAttempt($user, $dto->email, true, $meta['ip'], $meta['userAgent']);
 
         return $user;
+    }
+
+    private function logLoginAttempt(?User $user, string $email, bool $success, string $ip, string $userAgent): void
+    {
+        LoginAttemptEvent::dispatch(
+            $user,
+            $email,
+            $success,
+            $ip,
+            $userAgent
+        );
     }
 }

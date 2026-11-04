@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Tickets\Database\Seeders;
+namespace Modules\Tickets\database\seeders;
 
 use Illuminate\Database\Seeder;
 

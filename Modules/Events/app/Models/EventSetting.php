@@ -15,6 +15,13 @@ class EventSetting extends Model
 
     protected $table = 'event_settings';
 
+    protected $attributes = [
+        'confirmation_email_msg' => 'Thank you for your purchase! We appreciate your support and look forward to seeing you at the event.',
+        'pre_sale_message' => 'Tickets will go on sale soon.',
+        'post_sale_message' => 'Ticket sales have ended. Thank you for your interest and support!',
+        'is_status_msg_enabled' => false,
+    ];
+
     protected $fillable = [
         'uuid',
         'event_id',

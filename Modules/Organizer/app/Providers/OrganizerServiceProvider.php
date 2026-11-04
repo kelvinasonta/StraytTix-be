@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Organizer\App\Providers;
+namespace Modules\Organizer\app\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Nwidart\Modules\Support\ModuleServiceProvider;

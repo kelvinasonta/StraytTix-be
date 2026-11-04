@@ -96,11 +96,15 @@ class OrganizerService
             throw new OrganizerFetchFailed;
         }
 
-        if ($organizer->user_id !== $user->id) {
+        $isOwner = $organizer->user_id === $user->id;
+        $isAuthorizedMember = OrganizerMember::where('organizer_id', $organizer->id)
+            ->where('user_id', $user->id)
+            ->whereIn('role', [OrganizerMemberRole::OWNER, OrganizerMemberRole::ADMIN])
+            ->exists();
+
+        if (! $isOwner && ! $isAuthorizedMember) {
             throw new OrganizerFetchFailed;
         }
-
-        // Role verification # only owner, admin, editor can update
 
         $organizer = $this->updateOrganizerAction->handle($organizer, $data);
         $organizer->load(['owner'])->loadCount('members');

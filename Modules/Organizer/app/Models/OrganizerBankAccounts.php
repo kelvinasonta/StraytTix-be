@@ -1,11 +1,10 @@
 <?php
 
-namespace Modules\Organizer\App\Models;
+namespace Modules\Organizer\app\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-// use Modules\Organizer\Database\Factories\OrganizerBankAccountsFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrganizerBankAccounts extends Model
 {
@@ -23,14 +22,17 @@ class OrganizerBankAccounts extends Model
         'is_default',
     ];
 
-    protected $casts = [
-        'is_default' => 'boolean',
-        'account_number' => 'encrypted',
-        'bank_name' => 'encrypted',
-        'account_name' => 'encrypted',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_default' => 'boolean',
+            'account_number' => 'encrypted',
+            'bank_name' => 'encrypted',
+            'account_name' => 'encrypted',
+        ];
+    }
 
-    public function organizer()
+    public function organizer(): BelongsTo
     {
         return $this->belongsTo(Organizer::class);
     }

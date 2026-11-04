@@ -241,7 +241,11 @@ test('platform admin can list verification requests', function () {
         'documents' => [],
     ]);
 
-    $adminUser = User::factory()->create();
+    $adminUser = User::factory()->create([
+        'is_admin' => true,
+        'admin_role' => 'super_admin',
+        'admin_permissions' => ['*'],
+    ]);
 
     $response = $this->actingAs($adminUser, 'sanctum')->getJson('/api/v1/admin/verifications');
 
@@ -263,7 +267,11 @@ test('platform admin can approve verification request', function () {
     ]);
     $organizer->update(['verification_status' => OrganizerVerificationStatus::PENDING]);
 
-    $adminUser = User::factory()->create();
+    $adminUser = User::factory()->create([
+        'is_admin' => true,
+        'admin_role' => 'super_admin',
+        'admin_permissions' => ['*'],
+    ]);
 
     $response = $this->actingAs($adminUser, 'sanctum')->postJson(
         "/api/v1/admin/verifications/{$verification->uuid}/review",
@@ -299,7 +307,11 @@ test('platform admin can reject verification request with reason', function () {
     ]);
     $organizer->update(['verification_status' => OrganizerVerificationStatus::PENDING]);
 
-    $adminUser = User::factory()->create();
+    $adminUser = User::factory()->create([
+        'is_admin' => true,
+        'admin_role' => 'super_admin',
+        'admin_permissions' => ['*'],
+    ]);
 
     $response = $this->actingAs($adminUser, 'sanctum')->postJson(
         "/api/v1/admin/verifications/{$verification->uuid}/review",

@@ -130,4 +130,14 @@ class ImageUploadException extends Exception
             meta: ['preset' => $preset]
         );
     }
+
+    public static function invalidPath(string $path): self
+    {
+        return new self(
+            message: "Invalid or unauthorized image path [{$path}].",
+            status: 400,
+            errorCode: 'INVALID_IMAGE_PATH',
+            meta: ['path' => $path]
+        );
+    }
 }

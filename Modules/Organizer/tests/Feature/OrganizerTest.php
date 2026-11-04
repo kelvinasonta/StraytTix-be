@@ -66,6 +66,30 @@ test('owner can update their organizer', function () {
         ->assertJsonPath('data.name', 'Updated Organizer Name');
 });
 
+test('organizer admin can also update organizer details', function () {
+    $owner = User::factory()->create();
+    $adminUser = User::factory()->create();
+
+    $organizer = Organizer::create([
+        'user_id' => $owner->id,
+        'name' => 'Initial Name',
+        'type' => OrganizerType::ORGANIZATION,
+    ]);
+
+    OrganizerMember::create([
+        'organizer_id' => $organizer->id,
+        'user_id' => $adminUser->id,
+        'role' => OrganizerMemberRole::ADMIN,
+    ]);
+
+    $response = $this->actingAs($adminUser, 'sanctum')->putJson("/api/v1/organizers/{$organizer->uuid}", [
+        'name' => 'Updated by Admin',
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJsonPath('data.name', 'Updated by Admin');
+});
+
 test('owner can soft delete their organizer', function () {
     $user = User::factory()->create();
     $organizer = Organizer::create([

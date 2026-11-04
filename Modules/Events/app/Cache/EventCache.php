@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Events\App\Cache;
+namespace Modules\Events\app\Cache;
 
 use Closure;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Organizer\app\Http\Controllers\OrganizerBankAccountController;
 use Modules\Organizer\app\Http\Controllers\OrganizerController;
 use Modules\Organizer\app\Http\Controllers\OrganizerInvitationController;
 use Modules\Organizer\app\Http\Controllers\OrganizerMemberController;
@@ -23,7 +24,19 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
         Route::delete('/{organizerUuid}', [OrganizerController::class, 'destroy'])->middleware('organizer.role:owner');
     });
 
+    // Bank resolution and supported banks list
+    Route::prefix('banks')->group(function () {
+        Route::get('/', [OrganizerBankAccountController::class, 'getBanks']);
+        Route::post('/resolve', [OrganizerBankAccountController::class, 'resolveAccount']);
+    });
+
     Route::prefix('organizers/{organizerUuid}')->group(function () {
+        // Settlement Bank Account
+        Route::prefix('bank-account')->group(function () {
+            Route::get('/', [OrganizerBankAccountController::class, 'show'])->middleware('organizer.role:owner,admin,finance');
+            Route::post('/', [OrganizerBankAccountController::class, 'store'])->middleware('organizer.role:owner,admin,finance');
+        });
+
         // Verification
         Route::prefix('verification')->group(function () {
             Route::get('/', [OrganizerVerificationController::class, 'show'])->middleware('organizer.role:owner,admin');

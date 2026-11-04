@@ -5,8 +5,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Modules\Auth\app\Models\User;
-use Modules\Notification\App\Models\EmailSettings;
-use Modules\Notification\App\Models\EmailTemplate;
+use Modules\Notification\app\Models\EmailSettings;
+use Modules\Notification\app\Models\EmailTemplate;
 
 class DatabaseSeeder extends Seeder
 {

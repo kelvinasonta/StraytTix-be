@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Notification\Database\Seeders;
+namespace Modules\Notification\database\seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\Notification\App\Models\EmailSettings;
-use Modules\Notification\App\Models\EmailTemplate;
+use Modules\Notification\app\Models\EmailSettings;
+use Modules\Notification\app\Models\EmailTemplate;
 
 class NotificationDatabaseSeeder extends Seeder
 {
@@ -109,11 +109,11 @@ class NotificationDatabaseSeeder extends Seeder
         ];
 
         foreach ($emailTemplates as $template) {
-            EmailTemplate::create($template);
+            EmailTemplate::updateOrCreate(['slug' => $template['slug']], $template);
         }
 
         foreach ($emailSettings as $emailSetting) {
-            EmailSettings::create($emailSetting);
+            EmailSettings::updateOrCreate(['key' => $emailSetting['key']], $emailSetting);
         }
     }
 }

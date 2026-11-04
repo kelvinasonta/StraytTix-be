@@ -3,6 +3,7 @@
 .env
 .env.backup
 .env.production
+.env.*.local
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -25,3 +26,12 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+/dist/
+/docs/
+text.txt
+*.pdf
+
+# Docker & local storage data
+docker/data/
+docker-compose.override.yml

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Events\App\Cache;
+namespace Modules\Events\app\Cache;
 
 final class EventCacheKeys
 {

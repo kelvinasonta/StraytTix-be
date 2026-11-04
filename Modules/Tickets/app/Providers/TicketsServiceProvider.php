@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Tickets\App\Providers;
+namespace Modules\Tickets\app\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Nwidart\Modules\Support\ModuleServiceProvider;

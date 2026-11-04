@@ -2,7 +2,10 @@
 
 namespace Modules\Shared\app\Providers;
 
+use Modules\Shared\app\Cache\AppSettingsCache;
+use Modules\Shared\app\Contracts\AppSettingsServiceInterface;
 use Modules\Shared\app\Contracts\ImageUploadServiceInterface;
+use Modules\Shared\app\Services\AppSettingsService;
 use Modules\Shared\app\Services\ImageUploadService;
 use Modules\Shared\app\Services\Security\ImageProcessor;
 use Modules\Shared\app\Services\Security\ImageSecurityScanner;
@@ -41,5 +44,11 @@ class SharedServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ImageProcessor::class);
         $this->app->singleton(ImageUploadServiceInterface::class, ImageUploadService::class);
         $this->app->singleton(ImageUploadService::class);
+
+        $this->app->singleton(AppSettingsCache::class);
+        $this->app->singleton(
+            AppSettingsServiceInterface::class,
+            AppSettingsService::class
+        );
     }
 }

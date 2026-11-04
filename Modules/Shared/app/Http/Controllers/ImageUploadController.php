@@ -4,9 +4,11 @@ namespace Modules\Shared\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Modules\Shared\app\Contracts\ImageUploadServiceInterface;
 use Modules\Shared\app\DTOs\ImageUploadOptions;
+use Modules\Shared\app\Http\Requests\DeleteImageRequest;
+use Modules\Shared\app\Http\Requests\UploadImageRequest;
 
 class ImageUploadController extends Controller
 {
@@ -17,18 +19,11 @@ class ImageUploadController extends Controller
     /**
      * Upload and sanitize an image file using security scanner and processing presets.
      */
-    public function upload(Request $request)
+    public function upload(UploadImageRequest $request): JsonResponse
     {
-        $request->validate([
-            'image' => ['required_without:file', 'nullable', 'file', 'image', 'mimes:jpeg,jpg,png,webp'],
-            'file' => ['required_without:image', 'nullable', 'file', 'image', 'mimes:jpeg,jpg,png,webp'],
-            'preset' => ['nullable', 'string', 'in:avatar,event_banner,organizer_logo,general'],
-            'disk' => ['nullable', 'string'],
-        ]);
-
         $file = $request->file('image') ?? $request->file('file');
         $preset = $request->input('preset', 'general');
-        $disk = $request->input('disk', 'public');
+        $disk = $request->input('disk', config('shared.images.default_disk', 's3'));
 
         $options = ImageUploadOptions::forPreset($preset, [
             'disk' => $disk,
@@ -46,14 +41,9 @@ class ImageUploadController extends Controller
     /**
      * Delete an uploaded image from storage.
      */
-    public function destroy(Request $request)
+    public function destroy(DeleteImageRequest $request): JsonResponse
     {
-        $request->validate([
-            'path' => ['required', 'string'],
-            'disk' => ['nullable', 'string'],
-        ]);
-
-        $disk = $request->input('disk', 'public');
+        $disk = $request->input('disk', config('shared.images.default_disk', 's3'));
 
         $deleted = $this->imageUploadService->delete(
             $request->input('path'),

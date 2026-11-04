@@ -1,9 +1,10 @@
 <?php
 
-namespace Modules\Auth\App\Http\Controllers;
+namespace Modules\Auth\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Auth\app\DTOs\VerifyEmailDTO;
 use Modules\Auth\app\Http\Requests\TokenRequest;
@@ -12,7 +13,7 @@ use Modules\Auth\app\Services\VerifyEmailService;
 
 class EmailVerificationController extends Controller
 {
-    public function store(TokenRequest $request, VerifyEmailService $verifyEmailService)
+    public function store(TokenRequest $request, VerifyEmailService $verifyEmailService): JsonResponse
     {
         $dto = VerifyEmailDTO::fromArray($request->validated());
 
@@ -21,13 +22,10 @@ class EmailVerificationController extends Controller
         return ApiResponse::success('Email verified successfully', $data, 200);
     }
 
-    public function resend(Request $request, ResendEmailVerificationService $resendEmailVerification)
+    public function resend(Request $request, ResendEmailVerificationService $resendEmailVerification): JsonResponse
     {
-
         $resendEmailVerification->execute($request->user());
 
         return ApiResponse::success('Verification email sent successfully', [], 200);
     }
-
-    public function destroy($id) {}
 }

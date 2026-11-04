@@ -4,6 +4,7 @@ namespace Modules\Organizer\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Models\User;
@@ -20,7 +21,7 @@ class OrganizerMemberController extends Controller
         protected AuditService $auditService
     ) {}
 
-    public function index(Request $request, string $organizerUuid)
+    public function index(Request $request, string $organizerUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -36,7 +37,7 @@ class OrganizerMemberController extends Controller
         );
     }
 
-    public function store(StoreOrganizerMemberRequest $request, string $organizerUuid)
+    public function store(StoreOrganizerMemberRequest $request, string $organizerUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -90,7 +91,7 @@ class OrganizerMemberController extends Controller
         );
     }
 
-    public function update(UpdateOrganizerMemberRequest $request, string $organizerUuid, string $memberUuid)
+    public function update(UpdateOrganizerMemberRequest $request, string $organizerUuid, string $memberUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -135,7 +136,7 @@ class OrganizerMemberController extends Controller
         );
     }
 
-    public function destroy(Request $request, string $organizerUuid, string $memberUuid)
+    public function destroy(Request $request, string $organizerUuid, string $memberUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');

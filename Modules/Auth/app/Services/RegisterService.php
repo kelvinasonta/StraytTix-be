@@ -8,6 +8,7 @@ use Modules\Auth\app\Actions\CreateEmailVerificationAction;
 use Modules\Auth\app\Actions\RegisterUserAction;
 use Modules\Auth\app\DTOs\RegisterDTO;
 use Modules\Auth\app\Events\UserRegisteredEvent;
+use Modules\Auth\app\Exceptions\AuthException;
 use Modules\Auth\app\Exceptions\RegistrationFailedException;
 use Modules\Auth\app\Transformers\UserResource;
 use Modules\Organizer\app\Actions\CreateOrganizerAction;
@@ -75,6 +76,8 @@ class RegisterService
                 )->plainTextToken,
                 'organizer' => $organizer ? new OrganizerResource($organizer, false, $user) : null,
             ];
+        } catch (AuthException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Registration failed: '.$e->getMessage());
             throw new RegistrationFailedException;

@@ -34,12 +34,12 @@ return new class extends Migration
                 $table->json('amenities')->nullable();
 
                 // Notifications & Status Messages
-                $table->text('confirmation_email_msg')->nullable()->default('Thank you for your purchase! We appreciate your support and look forward to seeing you at the event.');
+                $table->text('confirmation_email_msg')->nullable();
                 $table->text('status_message')->nullable();
                 $table->boolean('is_status_msg_enabled')->default(false);
                 $table->string('status_message_type')->nullable();
-                $table->text('pre_sale_message')->nullable()->default('Tickets will go on sale soon.');
-                $table->text('post_sale_message')->nullable()->default('Ticket sales have ended. Thank you for your interest and support!');
+                $table->text('pre_sale_message')->nullable();
+                $table->text('post_sale_message')->nullable();
 
                 // Theme & Appearance
                 $table->string('theme_color')->nullable();

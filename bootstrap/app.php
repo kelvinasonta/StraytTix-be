@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Modules\Admin\app\Http\Middleware\EnsureUserIsAdmin;
 use Modules\Auth\app\Exceptions\AuthException;
 use Modules\Auth\app\Http\Middleware\EnsureEmailIsVerifiedMiddleware;
 use Modules\Events\app\Exceptions\EventException;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => EnsureEmailIsVerifiedMiddleware::class,
             'organizer.role' => EnsureOrganizerRole::class,
+            'admin.auth' => EnsureUserIsAdmin::class,
         ]);
 
         // API-only app: Never redirect unauthenticated requests to a login page

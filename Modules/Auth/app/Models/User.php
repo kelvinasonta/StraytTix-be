@@ -4,6 +4,9 @@ namespace Modules\Auth\app\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,6 +31,8 @@ class User extends Authenticatable
         'phone',
         'timezone',
         'email_verified_at',
+        'password_changed_at',
+        'phone_verified_at',
         'last_login_at',
         'last_login_ip',
         'account_type',
@@ -52,9 +57,42 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'password_changed_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'is_admin' => 'boolean',
+            'admin_permissions' => 'array',
+            'suspended_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Determine if the user is an active administrator.
+     */
+    public function isAdministrator(): bool
+    {
+        return (bool) $this->is_admin && $this->status === UserStatus::ACTIVE && $this->suspended_at === null;
+    }
+
+    /**
+     * Check if administrator has a specific permission.
+     */
+    public function hasAdminPermission(string $permission): bool
+    {
+        if (! $this->isAdministrator()) {
+            return false;
+        }
+
+        $permissions = $this->admin_permissions ?? [];
+
+        // Wildcard super-admin
+        if (in_array('*', $permissions, true)) {
+            return true;
+        }
+
+        return in_array($permission, $permissions, true);
     }
 
     protected static function newFactory()
@@ -71,37 +109,37 @@ class User extends Authenticatable
         });
     }
 
-    public function emailVerifications()
+    public function emailVerifications(): HasMany
     {
         return $this->hasMany(EmailVerification::class);
     }
 
-    public function passwordresettoken()
+    public function passwordResetToken(): HasOne
     {
         return $this->hasOne(PasswordResetToken::class);
     }
 
-    public function ownedOrganizers()
+    public function ownedOrganizers(): HasOne
     {
         return $this->hasOne(Organizer::class, 'user_id');
     }
 
-    public function favourites()
+    public function favourites(): HasMany
+    {
+        return $this->favorites();
+    }
+
+    public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);
     }
 
-    public function favorites()
-    {
-        return $this->hasMany(Favorite::class);
-    }
-
-    public function tickets()
+    public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
     }
 
-    public function organizers()
+    public function organizers(): BelongsToMany
     {
         return $this->belongsToMany(Organizer::class, 'organizer_members', 'user_id', 'organizer_id')
             ->withPivot(['id', 'role'])

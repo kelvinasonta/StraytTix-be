@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Modules\Payments\app\Exceptions\OrderException;
 use Modules\Payments\app\Models\Order;
 use Modules\Payments\app\Services\PaymentService;
@@ -80,8 +81,8 @@ class CheckoutPaymentController extends Controller
             if ($event === 'charge.success' && $reference) {
                 try {
                     $this->paymentService->verifyPayment($reference, $payload['data']);
-                } catch (\Exception) {
-                    // Log and acknowledge webhook
+                } catch (\Exception $e) {
+                    Log::error("Payment webhook verification failed for reference {$reference}: {$e->getMessage()}");
                 }
             }
         }

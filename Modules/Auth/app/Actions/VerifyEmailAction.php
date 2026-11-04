@@ -5,6 +5,7 @@ namespace Modules\Auth\app\Actions;
 use Modules\Auth\app\Exceptions\EmailAlreadyVerifiedException;
 use Modules\Auth\app\Exceptions\ExpiredVerificationTokenException;
 use Modules\Auth\app\Exceptions\InvalidVerificationTokenException;
+use Modules\Auth\app\Exceptions\UserNotFoundException;
 use Modules\Auth\app\Models\EmailVerification;
 use Modules\Auth\app\Models\User;
 
@@ -19,6 +20,10 @@ class VerifyEmailAction
         }
 
         $user = $verification->user;
+
+        if (! $user) {
+            throw new UserNotFoundException;
+        }
 
         if ($user->hasVerifiedEmail()) {
             throw new EmailAlreadyVerifiedException;

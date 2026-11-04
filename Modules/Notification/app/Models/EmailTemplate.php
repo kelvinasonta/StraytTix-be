@@ -1,11 +1,11 @@
 <?php
 
-namespace Modules\Notification\App\Models;
+declare(strict_types=1);
+
+namespace Modules\Notification\app\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-// use Modules\Notification\Database\Factories\EmailTemplateFactory;
 
 class EmailTemplate extends Model
 {
@@ -13,17 +13,24 @@ class EmailTemplate extends Model
 
     /**
      * The attributes that are mass assignable.
+     *
+     * @var list<string>
      */
     protected $fillable = [
         'slug',
-        'name',
         'subject',
         'body',
         'type',
         'is_active',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 }

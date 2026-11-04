@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Payments\App\Providers;
+namespace Modules\Payments\app\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Nwidart\Modules\Support\ModuleServiceProvider;

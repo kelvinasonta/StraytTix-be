@@ -4,6 +4,7 @@ namespace Modules\Audit\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Audit\app\Models\ActivityLog;
 use Modules\Audit\app\Services\AuditService;
@@ -19,7 +20,7 @@ class AuditController extends Controller
     /**
      * Display a listing of audit logs for the active organizer.
      */
-    public function index(Request $request, string $organizerUuid)
+    public function index(Request $request, string $organizerUuid): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
@@ -38,7 +39,7 @@ class AuditController extends Controller
     /**
      * Show details of a single audit log entry.
      */
-    public function show(Request $request, string $organizerUuid, int|string $id)
+    public function show(Request $request, string $organizerUuid, int|string $id): JsonResponse
     {
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');

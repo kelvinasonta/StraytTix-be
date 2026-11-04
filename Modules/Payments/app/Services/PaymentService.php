@@ -92,11 +92,11 @@ class PaymentService
         }
 
         // If gateway is Paystack and secret key exists, optionally verify against Paystack API
-        $secretKey = config('services.paystack.secret_key');
+        $secretKey = config('paystack.secret_key');
         if ($payment->gateway === PaymentGateway::Paystack && ! empty($secretKey) && ! app()->environment('testing')) {
             try {
                 $response = Http::withToken($secretKey)
-                    ->get("https://api.paystack.co/transaction/verify/{$reference}");
+                    ->get(config('paystack.payment_url')."/transaction/verify/{$reference}");
 
                 if ($response->successful() && $response->json('data.status') === 'success') {
                     $gatewayData = array_merge($gatewayData, $response->json('data') ?? []);
@@ -210,12 +210,12 @@ class PaymentService
      */
     protected function generateGatewayUrl(Payment $payment, Order $order, ?string $callbackUrl = null): string
     {
-        $secretKey = config('services.paystack.secret_key');
+        $secretKey = config('paystack.secret_key');
         $resolvedCallback = $callbackUrl ?? config('app.frontend_url', config('app.url'))."/checkout/callback?reference={$payment->reference}";
 
         if ($payment->gateway === PaymentGateway::Paystack && ! empty($secretKey) && ! app()->environment('testing')) {
             try {
-                $response = Http::withToken($secretKey)->post('https://api.paystack.co/transaction/initialize', [
+                $response = Http::withToken($secretKey)->post(config('paystack.payment_url').'/transaction/initialize', [
                     'email' => $order->customer_email,
                     'amount' => (int) round(((float) $order->total) * 100), // in kobo
                     'reference' => $payment->reference,

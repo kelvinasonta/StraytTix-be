@@ -11,7 +11,11 @@ uses(TestCase::class, RefreshDatabase::class)->beforeEach(function () {
 });
 
 it('can toggle a feature flag on and off', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->create([
+        'is_admin' => true,
+        'admin_role' => 'super_admin',
+        'admin_permissions' => ['*'],
+    ]);
 
     // Default should be off
     Feature::for('global')->deactivate('api-rate-limiting');

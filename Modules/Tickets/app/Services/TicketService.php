@@ -5,6 +5,7 @@ namespace Modules\Tickets\app\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Auth\app\Models\User;
 use Modules\Events\app\Models\Event;
@@ -125,26 +126,31 @@ class TicketService
      */
     public function issueTicket(User $user, string $ticketTypeUuid): Ticket
     {
-        $ticketType = TicketType::with('event')->where('uuid', $ticketTypeUuid)->firstOrFail();
+        return DB::transaction(function () use ($user, $ticketTypeUuid) {
+            $ticketType = TicketType::with('event')
+                ->where('uuid', $ticketTypeUuid)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if (! $ticketType->isAvailable()) {
-            throw new \DomainException('This ticket type is currently not available for purchase or RSVP.');
-        }
+            if (! $ticketType->isAvailable()) {
+                throw new \DomainException('This ticket type is currently not available for purchase or RSVP.');
+            }
 
-        $ticket = Ticket::create([
-            'event_id' => $ticketType->event_id,
-            'user_id' => $user->id,
-            'ticket_type_id' => $ticketType->id,
-            'ticket_number' => 'TKT-'.strtoupper(Str::random(8)),
-            'price_paid' => $ticketType->price,
-            'currency' => $ticketType->currency,
-            'status' => 'valid',
-            'qr_code' => 'EVT-'.$ticketType->event->uuid.'-TKT-'.Str::uuid(),
-        ]);
+            $ticket = Ticket::create([
+                'event_id' => $ticketType->event_id,
+                'user_id' => $user->id,
+                'ticket_type_id' => $ticketType->id,
+                'ticket_number' => 'TKT-'.strtoupper(Str::random(8)),
+                'price_paid' => $ticketType->price,
+                'currency' => $ticketType->currency,
+                'status' => 'valid',
+                'qr_code' => 'EVT-'.$ticketType->event->uuid.'-TKT-'.Str::uuid(),
+            ]);
 
-        $ticketType->increment('sold_quantity');
+            $ticketType->increment('sold_quantity');
 
-        return $ticket->load(['event.organizer', 'event.location', 'ticketType', 'user']);
+            return $ticket->load(['event.organizer', 'event.location', 'ticketType', 'user']);
+        });
     }
 
     /**

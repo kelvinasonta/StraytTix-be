@@ -93,6 +93,20 @@ test('user can revoke a specific session by token id', function () {
     expect($user->tokens()->where('id', $token2->accessToken->id)->exists())->toBeFalse();
 });
 
+test('user can logout and revoke their current access token', function () {
+    $user = User::factory()->create();
+    $token = $user->createToken('Mobile App');
+
+    $response = $this->withHeader('Authorization', "Bearer {$token->plainTextToken}")
+        ->postJson('/api/v1/auth/logout');
+
+    $response->assertStatus(200)
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Logged out successfully.');
+
+    expect($user->tokens()->count())->toBe(0);
+});
+
 test('user can view their login history', function () {
     $user = User::factory()->create();
 

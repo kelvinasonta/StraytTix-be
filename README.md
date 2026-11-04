@@ -1,58 +1,92 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Strayt Tix - Backend API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A high-performance, modular backend engine powering event ticketing, organizer management, payment processing, fraud-resilient scan check-ins, and multi-tenant event operations. Built with modern Laravel 13, modular DDD architecture, and Pest testing.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Architecture & Modules
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+The platform is designed with a strict modular structure (`Modules/`) using `nwidart/laravel-modules`:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Auth**: Sanctum-powered authentication, email verification, password resets, rate limiting, and session security.
+- **Admin**: Platform oversight, feature flags (Pennant), verification reviews, and administrative audit trails.
+- **Organizer**: Organizer workspaces, multi-role team management, bank accounts, and payout settings.
+- **Events**: Event lifecycle (draft, published, cancelled), scheduling, lineups, custom questions, discovery scoring, and geo-search.
+- **Tickets**: Ticket tiers, capacities, purchase reservations, barcode generation, attendee check-ins, and CSV exports.
+- **Payments**: Multi-gateway payment orchestration (Stripe, Paystack, Flutterwave) and automated order reconciliation.
+- **Notification**: Transactional email templates, mailer integration, and queue-driven alert dispatches.
+- **Audit**: Cryptographically auditable activity logging for organizers, team members, and attendees.
+- **Shared**: App settings cache engine, high-throughput image sanitization/upload engine with S3/MinIO storage.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Tech Stack & Infrastructure
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **PHP**: 8.3 / 8.5
+- **Framework**: Laravel 13
+- **Database**: MySQL 8.0
+- **Cache & Queues**: Redis
+- **Storage**: AWS S3 & MinIO (S3-compatible local/staging storage)
+- **Containerization**: Docker & Docker Compose (Nginx, PHP-FPM, MySQL, Redis, MinIO, Mailpit, phpMyAdmin)
+- **Testing**: Pest PHP v4 (170+ feature & unit tests)
+- **Code Standards**: Laravel Pint
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## Getting Started
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 1. Prerequisites
+- Docker & Docker Compose
+- Composer & PHP 8.3+
 
+### 2. Environment Configuration
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Ensure your `.env` contains your database and S3/MinIO storage keys:
+```env
+APP_NAME="Strayt Tix"
+APP_URL=http://localhost:8080
 
-## Contributing
+FILESYSTEM_DISK=s3
+AWS_BUCKET=strayttix
+AWS_ENDPOINT=http://minio:9000
+AWS_URL=http://localhost:9000/strayttix
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Start Local Environment (Docker)
+```bash
+docker compose up -d
+```
+Services will be accessible at:
+- **API (Nginx)**: [http://localhost:8080](http://localhost:8080)
+- **MinIO S3 Console**: [http://localhost:9001](http://localhost:9001) (`minioadmin` / `minioadmin`)
+- **Mailpit**: [http://localhost:8025](http://localhost:8025)
+- **phpMyAdmin**: [http://localhost:8081](http://localhost:8081)
 
-## Code of Conduct
+### 4. Database Migrations & Seeds
+```bash
+docker compose exec app php artisan migrate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Testing & Quality
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Run the comprehensive test suite with Pest:
+```bash
+php artisan test --compact
+```
+
+Run code styling fixes with Laravel Pint:
+```bash
+vendor/bin/pint --format agent
+```
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proprietary. All rights reserved by Strayt Tix.
