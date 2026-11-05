@@ -32,4 +32,3 @@ class CreditWalletResource extends JsonResource
         ];
     }
 }
-

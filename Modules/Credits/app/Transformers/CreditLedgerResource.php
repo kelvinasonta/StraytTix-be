@@ -38,4 +38,3 @@ class CreditLedgerResource extends JsonResource
         ];
     }
 }
-

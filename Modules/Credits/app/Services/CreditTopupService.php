@@ -1,181 +1,198 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Credits\app\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Credits\app\DTOs\GatewayCheckoutDTO;
 use Modules\Credits\app\Enums\CreditTxReason;
 use Modules\Credits\app\Models\CreditTopupTransaction;
 use Modules\Credits\app\Models\OrganizerCreditWallet;
+use RuntimeException;
 
 class CreditTopupService
 {
     public function __construct(
-        protected CreditLedgerService $ledgerService
+        protected CreditLedgerService $ledgerService,
+        protected CreditGatewayManager $gatewayManager
     ) {}
 
     /**
-     * Verify Paystack HMAC SHA-512 webhook signature.
+     * Initialize a credit top-up checkout session using the resolved gateway.
+     *
+     * @param  array<string, mixed>  $metadata
      */
-    public function verifySignature(string $rawPayload, string $signature): bool
-    {
-        $secret = config('paystack.secret_key') ?: env('PAYSTACK_SECRET_KEY');
+    public function initializeTopup(
+        OrganizerCreditWallet $wallet,
+        int $credits,
+        string $callbackUrl,
+        string $customerEmail,
+        ?string $gatewayName = null,
+        array $metadata = []
+    ): GatewayCheckoutDTO {
+        $gateway = $this->gatewayManager->driver($gatewayName);
+        $ratePerCreditKobo = (int) (config('credits.rate_per_credit_kobo') ?: 1000);
+        $amountKobo = $credits * $ratePerCreditKobo;
 
-        if (empty($secret)) {
-            Log::warning('Paystack secret key is not set; cannot verify webhook signature.');
+        $checkout = $gateway->initializeCheckout(
+            wallet: $wallet,
+            credits: $credits,
+            amountKobo: $amountKobo,
+            callbackUrl: $callbackUrl,
+            customerEmail: $customerEmail,
+            metadata: $metadata
+        );
 
-            return false;
-        }
+        // Pre-record pending topup transaction for tracing and idempotency lock
+        CreditTopupTransaction::create([
+            'wallet_id' => $wallet->id,
+            'provider' => $gateway->getIdentifier(),
+            'provider_ref' => $checkout->reference,
+            'amount_kobo' => $amountKobo,
+            'credits_awarded' => $credits,
+            'status' => 'PENDING',
+            'metadata' => array_merge($metadata, [
+                'authorization_url' => $checkout->authorizationUrl,
+            ]),
+        ]);
 
-        $computedSignature = hash_hmac('sha512', $rawPayload, $secret);
-
-        return hash_equals($computedSignature, $signature);
+        return $checkout;
     }
 
     /**
-     * Process Paystack Webhook payload for credit top-ups.
+     * Process an incoming webhook for any supported gateway.
      *
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    public function processPaystackWebhook(array $payload, string $signature): array
+    public function processWebhook(string $gatewayName, array $payload, string $signature, string $rawPayload = ''): array
     {
-        // 1. Verify signature if signature is passed
-        $rawPayload = json_encode($payload, JSON_UNESCAPED_SLASHES);
-        if (! $this->verifySignature((string) $rawPayload, $signature)) {
-            // Also check standard json_encode in case formatting differs
-            if (! $this->verifySignature(json_encode($payload), $signature)) {
-                Log::warning('Invalid Paystack webhook signature received.');
+        $gateway = $this->gatewayManager->driver($gatewayName);
+
+        // 1. Verify Webhook Signature
+        $rawToVerify = ! empty($rawPayload) ? $rawPayload : (string) json_encode($payload, JSON_UNESCAPED_SLASHES);
+        if (! $gateway->verifyWebhookSignature($rawToVerify, $signature)) {
+            // Fallback standard json_encode formatting check
+            if (! $gateway->verifyWebhookSignature((string) json_encode($payload), $signature)) {
+                Log::warning("Invalid {$gateway->getIdentifier()} webhook signature received.");
 
                 return [
                     'status' => 'invalid_signature',
-                    'message' => 'Invalid webhook signature.',
+                    'message' => "Invalid webhook signature for gateway {$gateway->getIdentifier()}.",
                 ];
             }
         }
 
-        $event = $payload['event'] ?? '';
-        $data = $payload['data'] ?? [];
+        // 2. Parse & Normalize Event
+        $eventDto = $gateway->parseWebhookEvent($payload);
 
-        // 2. Only process charge.success events
-        if ($event !== 'charge.success') {
+        if (! $eventDto->isSuccessful) {
             return [
                 'status' => 'ignored',
-                'event' => $event,
+                'message' => "Webhook event for {$eventDto->providerReference} ignored (non-successful state).",
             ];
         }
 
-        $reference = $data['reference'] ?? null;
-        if (! $reference) {
+        if (empty($eventDto->providerReference)) {
             return [
                 'status' => 'error',
-                'message' => 'Missing transaction reference.',
+                'message' => 'Missing provider transaction reference.',
             ];
         }
 
-        // 3. Extract wallet information and calculate credits
-        $metadata = $data['metadata'] ?? [];
-        $walletId = $metadata['wallet_id'] ?? null;
-        $organizerId = $metadata['organizer_id'] ?? null;
-
-        // Find wallet by wallet_id or organizer_id
-        $wallet = null;
-        if ($walletId) {
-            $wallet = OrganizerCreditWallet::find($walletId);
-        } elseif ($organizerId) {
-            $wallet = OrganizerCreditWallet::where('organizer_id', $organizerId)->first();
-        }
-
-        if (! $wallet) {
-            Log::error("Unable to find organizer wallet for Paystack topup reference {$reference}", [
-                'metadata' => $metadata,
-            ]);
-
-            return [
-                'status' => 'error',
-                'message' => 'Wallet not found for transaction metadata.',
-            ];
-        }
-
-        $amountKobo = (int) ($data['amount'] ?? 0);
-
-        // Determine credits awarded:
-        // Use credits_purchased in metadata if explicitly specified,
-        // otherwise default to standard rate (1 credit = 1000 kobo / 10 NGN)
-        $creditsAwarded = isset($metadata['credits_purchased'])
-            ? (int) $metadata['credits_purchased']
-            : (int) floor($amountKobo / 1000);
-
-        if ($creditsAwarded <= 0) {
-            Log::warning("Zero or negative credits awarded for topup {$reference} (amount: {$amountKobo} kobo)");
-
-            return [
-                'status' => 'error',
-                'message' => 'Invalid credit conversion amount.',
-            ];
-        }
-
-        // 4. Idempotency guard and atomic transaction
-        return DB::transaction(function () use ($wallet, $reference, $amountKobo, $creditsAwarded, $data, $metadata): array {
-            /** @var CreditTopupTransaction $topup */
-            $topup = CreditTopupTransaction::firstOrCreate(
-                ['provider_ref' => $reference],
-                [
-                    'wallet_id' => $wallet->id,
-                    'provider' => 'paystack',
-                    'amount_kobo' => $amountKobo,
-                    'credits_awarded' => $creditsAwarded,
-                    'status' => 'PENDING',
-                    'metadata' => $data,
-                ]
-            );
-
-            // Re-lock record to prevent race conditions
-            $topup = CreditTopupTransaction::where('id', $topup->id)
+        // 3. Atomically Ingest & Credit Wallet with Idempotency Guard
+        return DB::transaction(function () use ($eventDto) {
+            /** @var CreditTopupTransaction $topupTx */
+            $topupTx = CreditTopupTransaction::where('provider_ref', $eventDto->providerReference)
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->first();
 
-            if ($topup->status === 'SUCCESS') {
+            // Resolve wallet
+            $wallet = null;
+            if ($topupTx) {
+                $wallet = OrganizerCreditWallet::where('id', $topupTx->wallet_id)->lockForUpdate()->first();
+            } elseif ($eventDto->walletId) {
+                $wallet = OrganizerCreditWallet::where('id', $eventDto->walletId)->lockForUpdate()->first();
+            } elseif ($eventDto->walletUuid) {
+                $wallet = OrganizerCreditWallet::where('uuid', $eventDto->walletUuid)->lockForUpdate()->first();
+            }
+
+            if (! $wallet) {
+                Log::error("Credit Top-up webhook: Wallet not found for reference {$eventDto->providerReference}");
+
+                throw new RuntimeException("Wallet not found for transaction reference {$eventDto->providerReference}");
+            }
+
+            // Create or update topup transaction row
+            if (! $topupTx) {
+                $topupTx = CreditTopupTransaction::create([
+                    'wallet_id' => $wallet->id,
+                    'provider' => $eventDto->gateway,
+                    'provider_ref' => $eventDto->providerReference,
+                    'amount_kobo' => $eventDto->amountKobo,
+                    'credits_awarded' => $eventDto->creditsAwarded,
+                    'status' => 'PENDING',
+                    'metadata' => $eventDto->metadata,
+                ]);
+            }
+
+            // Idempotency: Do not process twice
+            if ($topupTx->isSuccess()) {
+                Log::info("Credit top-up reference {$eventDto->providerReference} already processed.");
+
                 return [
                     'status' => 'already_processed',
-                    'reference' => $reference,
-                    'credits_awarded' => $topup->credits_awarded,
+                    'credits' => $topupTx->credits_awarded,
+                    'balance' => $wallet->balance,
                 ];
             }
 
-            // Credit the wallet
-            $idempotencyKey = 'topup_'.$reference;
+            // Credit the Wallet
+            $idempotencyKey = "topup_{$eventDto->gateway}_{$eventDto->providerReference}";
             $ledgerEntry = $this->ledgerService->creditWallet(
                 wallet: $wallet,
-                amount: $creditsAwarded,
+                amount: $eventDto->creditsAwarded,
                 reason: CreditTxReason::TOPUP,
                 idempotencyKey: $idempotencyKey,
-                reference: $reference,
-                description: sprintf('Credit top-up via Paystack (%s credits)', number_format($creditsAwarded)),
+                reference: $eventDto->providerReference,
+                description: "Credit top-up via {$eventDto->gateway} ({$eventDto->creditsAwarded} credits)",
                 metadata: [
-                    'provider' => 'paystack',
-                    'provider_ref' => $reference,
-                    'amount_kobo' => $amountKobo,
-                    'topup_id' => $topup->id,
-                    'custom_metadata' => $metadata,
+                    'gateway' => $eventDto->gateway,
+                    'provider_ref' => $eventDto->providerReference,
+                    'amount_kobo' => $eventDto->amountKobo,
                 ]
             );
 
-            // Mark topup successful
-            $topup->update([
+            // Mark transaction as SUCCESS
+            $topupTx->update([
                 'status' => 'SUCCESS',
-                'metadata' => array_merge($topup->metadata ?? [], [
-                    'ledger_id' => $ledgerEntry->id,
+                'amount_kobo' => $eventDto->amountKobo > 0 ? $eventDto->amountKobo : $topupTx->amount_kobo,
+                'credits_awarded' => $eventDto->creditsAwarded > 0 ? $eventDto->creditsAwarded : $topupTx->credits_awarded,
+                'metadata' => array_merge($topupTx->metadata ?? [], [
+                    'ledger_uuid' => $ledgerEntry->uuid,
                     'processed_at' => now()->toIso8601String(),
                 ]),
             ]);
 
             return [
                 'status' => 'success',
-                'reference' => $reference,
-                'credits_awarded' => $creditsAwarded,
-                'new_balance' => $ledgerEntry->balance_after,
+                'credits_awarded' => $eventDto->creditsAwarded,
+                'new_balance' => $wallet->fresh()->balance,
+                'reference' => $eventDto->providerReference,
             ];
         });
+    }
+
+    /**
+     * Backward-compatibility proxy for Paystack specific calls.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function processPaystackWebhook(array $payload, string $signature): array
+    {
+        return $this->processWebhook('paystack', $payload, $signature);
     }
 }
