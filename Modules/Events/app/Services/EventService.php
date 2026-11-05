@@ -116,7 +116,7 @@ class EventService
 
     public function getOrganizerEvents(Organizer $organizer, array $filters = []): LengthAwarePaginator
     {
-        $query = Event::with(['location', 'schedule', 'settings'])
+        $query = Event::with(['location', 'schedule', 'settings', 'ticketTypes'])
             ->where('organizer_id', $organizer->id);
 
         if (! empty($filters['status'])) {
