@@ -40,4 +40,13 @@ interface CreditPaymentGatewayInterface
      * @param  array<string, mixed>  $payload
      */
     public function parseWebhookEvent(array $payload): NormalizedWebhookDTO;
+
+    /**
+     * Synchronously verify transaction status with provider API when client redirects back.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array{is_successful: bool, amount_kobo: int, credits_awarded: int, status: string, message: string, raw_data: array<string, mixed>}
+     */
+    public function verifyTransaction(string $reference, array $options = []): array;
 }
+

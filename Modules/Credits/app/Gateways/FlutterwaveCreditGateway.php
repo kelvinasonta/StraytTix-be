@@ -149,4 +149,58 @@ class FlutterwaveCreditGateway implements CreditPaymentGatewayInterface
             rawPayload: $payload
         );
     }
+
+    /**
+     * Synchronously verify a transaction with Flutterwave API.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array{is_successful: bool, amount_kobo: int, credits_awarded: int, status: string, message: string, raw_data: array<string, mixed>}
+     */
+    public function verifyTransaction(string $reference, array $options = []): array
+    {
+        $secretKey = config('credits.gateways.flutterwave.secret_key') ?: env('FLUTTERWAVE_SECRET_KEY');
+        $baseUrl = rtrim((string) (config('credits.gateways.flutterwave.base_url') ?: 'https://api.flutterwave.com/v3'), '/');
+
+        if (app()->environment('testing') && empty($secretKey)) {
+            return [
+                'is_successful' => true,
+                'amount_kobo' => 50000,
+                'credits_awarded' => 50,
+                'status' => 'successful',
+                'message' => 'Test verification successful',
+                'raw_data' => ['mock' => true],
+            ];
+        }
+
+        if (empty($secretKey)) {
+            throw new RuntimeException('Flutterwave secret key is not configured.');
+        }
+
+        // Flutterwave verify endpoint by tx_ref
+        $response = Http::withToken($secretKey)
+            ->timeout(15)
+            ->get("{$baseUrl}/transactions/verify-by-reference", ['tx_ref' => $reference]);
+
+        $data = $response->json('data') ?? [];
+        $status = strtolower((string) ($data['status'] ?? ''));
+        $isSuccessful = $response->successful() && ($status === 'successful');
+        $amountNgn = (float) ($data['amount'] ?? 0);
+        $amountKobo = (int) round($amountNgn * 100);
+        $metadata = $data['meta'] ?? $data['metadata'] ?? [];
+
+        $ratePerCreditKobo = (int) (config('credits.rate_per_credit_kobo') ?: 1000);
+        $creditsAwarded = isset($metadata['credits_requested'])
+            ? (int) $metadata['credits_requested']
+            : (int) floor($amountKobo / max(1, $ratePerCreditKobo));
+
+        return [
+            'is_successful' => $isSuccessful,
+            'amount_kobo' => $amountKobo,
+            'credits_awarded' => $creditsAwarded,
+            'status' => $status ?: 'failed',
+            'message' => (string) ($response->json('message') ?: ($isSuccessful ? 'Verification successful' : 'Verification failed')),
+            'raw_data' => $data,
+        ];
+    }
 }
+

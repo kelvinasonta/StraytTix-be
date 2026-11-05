@@ -18,6 +18,7 @@ Route::prefix('v1')->group(function () {
             Route::get('ledger', [CreditWalletController::class, 'ledger']);
             Route::get('gateways', [CreditTopupController::class, 'gateways']);
             Route::post('top-up/initialize', [CreditTopupController::class, 'initialize']);
+            Route::get('top-up/verify/{reference}', [CreditTopupController::class, 'verify']);
             Route::get('reconcile', [CreditWalletController::class, 'reconcile']);
         });
 });

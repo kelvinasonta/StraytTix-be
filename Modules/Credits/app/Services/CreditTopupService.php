@@ -186,6 +186,110 @@ class CreditTopupService
     }
 
     /**
+     * Synchronously verify a transaction using the provider API and credit the wallet.
+     * Used when the organizer returns to the browser redirect URL.
+     *
+     * @return array<string, mixed>
+     */
+    public function verifyAndSettle(OrganizerCreditWallet $wallet, string $reference, ?string $gatewayName = null): array
+    {
+        /** @var CreditTopupTransaction|null $topupTx */
+        $topupTx = CreditTopupTransaction::where('provider_ref', $reference)->first();
+
+        // If already completed via webhook, return immediately
+        if ($topupTx && $topupTx->isSuccess()) {
+            return [
+                'status' => 'success',
+                'already_processed' => true,
+                'credits_awarded' => $topupTx->credits_awarded,
+                'balance' => $wallet->fresh()->balance,
+                'reference' => $reference,
+            ];
+        }
+
+        $resolvedGateway = $topupTx ? $topupTx->provider : ($gatewayName ?: $this->gatewayManager->getDefaultDriverName());
+        $gateway = $this->gatewayManager->driver($resolvedGateway);
+
+        $verification = $gateway->verifyTransaction($reference);
+
+        if (! ($verification['is_successful'] ?? false)) {
+            if ($topupTx) {
+                $topupTx->update(['status' => 'FAILED']);
+            }
+
+            return [
+                'status' => 'failed',
+                'message' => $verification['message'] ?? 'Payment verification failed on gateway.',
+                'reference' => $reference,
+            ];
+        }
+
+        $creditsAwarded = (int) ($verification['credits_awarded'] ?? 0);
+        $amountKobo = (int) ($verification['amount_kobo'] ?? 0);
+
+        return DB::transaction(function () use ($wallet, $topupTx, $resolvedGateway, $reference, $creditsAwarded, $amountKobo, $verification) {
+            $lockedWallet = OrganizerCreditWallet::where('id', $wallet->id)->lockForUpdate()->firstOrFail();
+
+            if (! $topupTx) {
+                $topupTx = CreditTopupTransaction::create([
+                    'wallet_id' => $lockedWallet->id,
+                    'provider' => $resolvedGateway,
+                    'provider_ref' => $reference,
+                    'amount_kobo' => $amountKobo,
+                    'credits_awarded' => $creditsAwarded,
+                    'status' => 'PENDING',
+                    'metadata' => $verification['raw_data'] ?? [],
+                ]);
+            } else {
+                $topupTx = CreditTopupTransaction::where('id', $topupTx->id)->lockForUpdate()->firstOrFail();
+            }
+
+            if ($topupTx->isSuccess()) {
+                return [
+                    'status' => 'success',
+                    'already_processed' => true,
+                    'credits_awarded' => $topupTx->credits_awarded,
+                    'balance' => $lockedWallet->balance,
+                    'reference' => $reference,
+                ];
+            }
+
+            $idempotencyKey = "topup_{$resolvedGateway}_{$reference}";
+            $ledgerEntry = $this->ledgerService->creditWallet(
+                wallet: $lockedWallet,
+                amount: $creditsAwarded,
+                reason: CreditTxReason::TOPUP,
+                idempotencyKey: $idempotencyKey,
+                reference: $reference,
+                description: "Credit top-up via {$resolvedGateway} ({$creditsAwarded} credits)",
+                metadata: [
+                    'gateway' => $resolvedGateway,
+                    'provider_ref' => $reference,
+                    'amount_kobo' => $amountKobo,
+                    'verified_via' => 'direct_verification_api',
+                ]
+            );
+
+            $topupTx->update([
+                'status' => 'SUCCESS',
+                'amount_kobo' => $amountKobo > 0 ? $amountKobo : $topupTx->amount_kobo,
+                'credits_awarded' => $creditsAwarded > 0 ? $creditsAwarded : $topupTx->credits_awarded,
+                'metadata' => array_merge($topupTx->metadata ?? [], [
+                    'ledger_uuid' => $ledgerEntry->uuid,
+                    'verified_at' => now()->toIso8601String(),
+                ]),
+            ]);
+
+            return [
+                'status' => 'success',
+                'credits_awarded' => $creditsAwarded,
+                'balance' => $lockedWallet->fresh()->balance,
+                'reference' => $reference,
+            ];
+        });
+    }
+
+    /**
      * Backward-compatibility proxy for Paystack specific calls.
      *
      * @param  array<string, mixed>  $payload

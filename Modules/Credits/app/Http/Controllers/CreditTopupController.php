@@ -73,6 +73,30 @@ class CreditTopupController extends Controller
     }
 
     /**
+     * Synchronously verify a top-up transaction using the provider reference.
+     */
+    public function verify(Request $request, string $organizerUuid, string $reference): JsonResponse
+    {
+        $organizer = $request->attributes->get('active_organizer')
+            ?? Organizer::where('uuid', $organizerUuid)->firstOrFail();
+
+        $wallet = $this->ledgerService->getOrCreateWallet($organizer);
+        $gatewayName = $request->query('gateway');
+
+        try {
+            $result = $this->topupService->verifyAndSettle($wallet, $reference, $gatewayName);
+
+            if (($result['status'] ?? '') === 'failed') {
+                return ApiResponse::error($result['message'] ?? 'Payment verification failed on gateway.', 422);
+            }
+
+            return ApiResponse::success('Payment verified successfully. Credits wallet updated.', $result);
+        } catch (Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 422);
+        }
+    }
+
+    /**
      * Unified multi-gateway webhook ingestion handler.
      */
     public function webhook(Request $request, string $gateway): JsonResponse
