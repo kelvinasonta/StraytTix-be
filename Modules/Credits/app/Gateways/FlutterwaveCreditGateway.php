@@ -203,4 +203,3 @@ class FlutterwaveCreditGateway implements CreditPaymentGatewayInterface
         ];
     }
 }
-

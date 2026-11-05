@@ -49,4 +49,3 @@ interface CreditPaymentGatewayInterface
      */
     public function verifyTransaction(string $reference, array $options = []): array;
 }
-
