@@ -10,14 +10,15 @@ Route::prefix('v1')->group(function () {
     // Payment Webhook
     Route::post('webhooks/payments/{gateway}', [CheckoutPaymentController::class, 'webhook']);
 
-    // Authenticated Customer & Buyer Endpoints
-    Route::middleware(['auth:sanctum'])->group(function () {
-        Route::post('events/{eventUuid}/orders', [OrderController::class, 'store']);
-        Route::get('orders', [OrderController::class, 'userOrders']);
-        Route::get('orders/{orderUuid}', [OrderController::class, 'show']);
+    // Public / Guest & Authenticated Checkout Endpoints
+    Route::post('events/{eventUuid}/orders', [OrderController::class, 'store']);
+    Route::get('orders/{orderUuid}', [OrderController::class, 'show']);
+    Route::post('orders/{orderUuid}/payments', [CheckoutPaymentController::class, 'initialize']);
+    Route::get('payments/verify/{reference}', [CheckoutPaymentController::class, 'verify']);
 
-        Route::post('orders/{orderUuid}/payments', [CheckoutPaymentController::class, 'initialize']);
-        Route::get('payments/verify/{reference}', [CheckoutPaymentController::class, 'verify']);
+    // Authenticated Customer Only Endpoints
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('orders', [OrderController::class, 'userOrders']);
     });
 
     // Organizer Scoped Order Management

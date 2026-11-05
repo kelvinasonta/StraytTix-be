@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->string('order_number')->unique()->index();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('event_id')->constrained('events')->cascadeOnDelete();
             $table->foreignId('organizer_id')->constrained('organizers')->cascadeOnDelete();
             $table->string('status')->default('pending')->index();
@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('customer_name');
             $table->string('customer_email');
             $table->string('customer_phone')->nullable();
+            $table->string('guest_token', 64)->nullable()->index();
             $table->text('notes')->nullable();
             $table->timestamp('reserved_until')->nullable();
             $table->timestamp('paid_at')->nullable();

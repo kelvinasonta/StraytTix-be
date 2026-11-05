@@ -27,6 +27,10 @@ class TicketResource extends JsonResource
                 return new TicketTypeResource($this->ticketType);
             }),
             'user' => $this->whenLoaded('user', function () {
+                if (! $this->user) {
+                    return null;
+                }
+
                 return [
                     'id' => $this->user->uuid,
                     'name' => $this->user->name,

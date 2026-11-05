@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('event_id')->constrained('events')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('ticket_type_id')->constrained('ticket_types')->cascadeOnDelete();
             $table->string('ticket_number')->unique();
             $table->decimal('price_paid', 10, 2)->default(0.00);

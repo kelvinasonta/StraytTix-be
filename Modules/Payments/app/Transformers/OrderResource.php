@@ -29,6 +29,7 @@ class OrderResource extends JsonResource
             'customerName' => $this->customer_name,
             'customerEmail' => $this->customer_email,
             'customerPhone' => $this->customer_phone,
+            'guestToken' => $this->guest_token,
             'reservedUntil' => $this->reserved_until?->toISOString(),
             'paidAt' => $this->paid_at?->toISOString(),
             'createdAt' => $this->created_at?->toISOString(),
