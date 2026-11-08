@@ -28,7 +28,7 @@ class OrderService
      * @param  array{customer_name?: string|null, customer_email?: string|null, customer_phone?: string|null}  $customerData
      */
     public function createOrder(
-        User $buyer,
+        ?User $buyer,
         Event $event,
         array $itemsData,
         array $customerData = [],
@@ -92,12 +92,19 @@ class OrderService
             $serviceFee = 0.00;
             $total = max(0.00, $subtotal - $discount + $serviceFee);
 
-            $customerName = $customerData['customer_name'] ?? $buyer->name;
-            $customerEmail = $customerData['customer_email'] ?? $buyer->email;
+            $customerName = $customerData['customer_name'] ?? ($buyer?->name ?? 'Guest Buyer');
+            $customerEmail = $customerData['customer_email'] ?? ($buyer?->email ?? null);
             $customerPhone = $customerData['customer_phone'] ?? null;
 
+            if (empty($customerEmail)) {
+                throw new OrderException('Customer email is required for ticket delivery.');
+            }
+
+            // Generate secure guest token for unauthenticated access & verification
+            $guestToken = $buyer ? null : bin2hex(random_bytes(24));
+
             $order = Order::create([
-                'user_id' => $buyer->id,
+                'user_id' => $buyer?->id,
                 'event_id' => $event->id,
                 'organizer_id' => $event->organizer_id,
                 'status' => OrderStatus::Pending,
@@ -109,6 +116,7 @@ class OrderService
                 'customer_name' => $customerName,
                 'customer_email' => $customerEmail,
                 'customer_phone' => $customerPhone,
+                'guest_token' => $guestToken,
                 'notes' => $notes,
                 'reserved_until' => now()->addMinutes(15),
             ]);

@@ -135,6 +135,26 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->booting(function () {
+        // Strictly protect the dev/local database from being targeted when testing
+        if (app()->environment('testing')) {
+            config([
+                'database.default' => 'mysql_testing',
+                'database.connections.mysql_testing' => [
+                    'driver' => 'mysql',
+                    'host' => env('DB_HOST', 'mysql'),
+                    'port' => env('DB_PORT', '3306'),
+                    'database' => 'eventos_testing',
+                    'username' => env('DB_USERNAME', 'eventos_user'),
+                    'password' => env('DB_PASSWORD', 'secret'),
+                    'charset' => 'utf8mb4',
+                    'collation' => 'utf8mb4_unicode_ci',
+                    'prefix' => '',
+                    'strict' => true,
+                    'engine' => null,
+                ],
+            ]);
+        }
+
         Model::preventLazyLoading(
             ! app()->isProduction()
         );

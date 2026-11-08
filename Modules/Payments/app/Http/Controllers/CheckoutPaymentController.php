@@ -33,8 +33,16 @@ class CheckoutPaymentController extends Controller
         $order = Order::where('uuid', $orderUuid)->firstOrFail();
 
         // Ensure user is authorized to pay for this order
-        if ($order->user_id !== $request->user()->id) {
-            return ApiResponse::error('Unauthorized to initiate payment for this order.', 403);
+        $user = $request->user();
+        if ($user) {
+            if ($order->user_id && $order->user_id !== $user->id) {
+                return ApiResponse::error('Unauthorized to initiate payment for this order.', 403);
+            }
+        } else {
+            $guestToken = $request->header('X-Guest-Token') ?? $request->input('guest_token') ?? $request->query('guest_token');
+            if ($order->guest_token && $order->guest_token !== $guestToken) {
+                return ApiResponse::error('Unauthorized to initiate payment for this order. Valid guest token required.', 403);
+            }
         }
 
         try {

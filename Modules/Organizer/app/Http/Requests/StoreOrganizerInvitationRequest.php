@@ -18,6 +18,8 @@ class StoreOrganizerInvitationRequest extends FormRequest
         return [
             'email' => ['required', 'email'],
             'role' => ['required', new Enum(OrganizerMemberRole::class)],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string'],
         ];
     }
 }

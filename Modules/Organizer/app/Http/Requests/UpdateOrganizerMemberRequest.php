@@ -17,6 +17,8 @@ class UpdateOrganizerMemberRequest extends FormRequest
     {
         return [
             'role' => ['required', new Enum(OrganizerMemberRole::class)],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string'],
         ];
     }
 }

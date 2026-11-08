@@ -18,6 +18,8 @@ class StoreOrganizerMemberRequest extends FormRequest
         return [
             'email' => ['required', 'email', 'exists:users,email'],
             'role' => ['required', new Enum(OrganizerMemberRole::class)],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string'],
         ];
     }
 }

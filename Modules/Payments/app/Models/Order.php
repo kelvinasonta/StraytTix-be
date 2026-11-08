@@ -37,6 +37,7 @@ class Order extends Model
         'customer_name',
         'customer_email',
         'customer_phone',
+        'guest_token',
         'notes',
         'reserved_until',
         'paid_at',

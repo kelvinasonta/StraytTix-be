@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Models\User;
 use Modules\Organizer\app\Enum\OrganizerMemberRole;
+use Modules\Organizer\app\Enum\OrganizerPermission;
 use Modules\Organizer\app\Http\Requests\StoreOrganizerMemberRequest;
 use Modules\Organizer\app\Http\Requests\UpdateOrganizerMemberRequest;
 use Modules\Organizer\app\Models\Organizer;
@@ -26,6 +27,18 @@ class OrganizerMemberController extends Controller
         /** @var Organizer $organizer */
         $organizer = $request->attributes->get('active_organizer');
 
+        if ($organizer->user_id) {
+            OrganizerMember::firstOrCreate(
+                [
+                    'organizer_id' => $organizer->id,
+                    'user_id' => $organizer->user_id,
+                ],
+                [
+                    'role' => OrganizerMemberRole::OWNER,
+                ]
+            );
+        }
+
         $members = OrganizerMember::where('organizer_id', $organizer->id)
             ->with(['user'])
             ->latest()
@@ -34,6 +47,21 @@ class OrganizerMemberController extends Controller
         return ApiResponse::success(
             'Organizer members retrieved.',
             OrganizerMemberResource::collection($members)->response()->getData(true)
+        );
+    }
+
+    public function roles(Request $request, string $organizerUuid): JsonResponse
+    {
+        /** @var OrganizerMemberRole|null $requesterRole */
+        $requesterRole = $request->attributes->get('active_organizer_role');
+
+        return ApiResponse::success(
+            'Organizer roles retrieved.',
+            [
+                'current_role' => $requesterRole?->value,
+                'permissions' => $requesterRole?->permissions() ?? [],
+                'roles' => OrganizerMemberRole::metadata($requesterRole),
+            ]
         );
     }
 
@@ -64,10 +92,20 @@ class OrganizerMemberController extends Controller
             $userToAdd->update(['account_type' => 'organizer']);
         }
 
+        $customPermissions = null;
+        if ($request->has('permissions') && is_array($request->input('permissions'))) {
+            $allowedValues = OrganizerPermission::values();
+            $customPermissions = array_values(array_unique(array_filter(
+                $request->input('permissions'),
+                fn ($p) => is_string($p) && in_array($p, $allowedValues, true)
+            )));
+        }
+
         $member = OrganizerMember::create([
             'organizer_id' => $organizer->id,
             'user_id' => $userToAdd->id,
             'role' => $targetRole,
+            'permissions' => $customPermissions,
         ]);
 
         $member->load(['user']);
@@ -99,8 +137,10 @@ class OrganizerMemberController extends Controller
         $requesterRole = $request->attributes->get('active_organizer_role');
 
         $member = OrganizerMember::where('organizer_id', $organizer->id)
+            ->with(['user'])
             ->where(function ($query) use ($memberUuid) {
                 $query->where('id', $memberUuid)
+                    ->orWhere('user_id', $memberUuid)
                     ->orWhereHas('user', fn ($q) => $q->where('uuid', $memberUuid));
             })
             ->firstOrFail();
@@ -115,7 +155,24 @@ class OrganizerMemberController extends Controller
             return ApiResponse::error('You do not have permission to modify this member or assign this role.', 403);
         }
 
-        $member->update(['role' => $newRole]);
+        $validatedData = $request->validated();
+        $updateData = ['role' => $newRole];
+
+        if (array_key_exists('permissions', $validatedData)) {
+            $customPermissions = $validatedData['permissions'];
+            if (is_array($customPermissions)) {
+                $allowedValues = OrganizerPermission::values();
+                $sanitizedPermissions = array_values(array_unique(array_filter(
+                    $customPermissions,
+                    fn ($p) => is_string($p) && in_array($p, $allowedValues, true)
+                )));
+                $updateData['permissions'] = $sanitizedPermissions;
+            } else {
+                $updateData['permissions'] = null;
+            }
+        }
+
+        $member->update($updateData);
         $member->load(['user']);
 
         $this->auditService->log(
@@ -127,6 +184,7 @@ class OrganizerMemberController extends Controller
                 'member_id' => $member->id,
                 'user_id' => $member->user_id,
                 'new_role' => $newRole->value,
+                'custom_permissions' => $member->permissions,
             ]
         );
 
@@ -144,8 +202,10 @@ class OrganizerMemberController extends Controller
         $requesterRole = $request->attributes->get('active_organizer_role');
 
         $member = OrganizerMember::where('organizer_id', $organizer->id)
+            ->with(['user'])
             ->where(function ($query) use ($memberUuid) {
                 $query->where('id', $memberUuid)
+                    ->orWhere('user_id', $memberUuid)
                     ->orWhereHas('user', fn ($q) => $q->where('uuid', $memberUuid));
             })
             ->firstOrFail();

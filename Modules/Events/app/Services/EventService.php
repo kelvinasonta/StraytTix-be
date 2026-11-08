@@ -116,7 +116,7 @@ class EventService
 
     public function getOrganizerEvents(Organizer $organizer, array $filters = []): LengthAwarePaginator
     {
-        $query = Event::with(['location', 'schedule', 'settings'])
+        $query = Event::with(['location', 'schedule', 'settings', 'ticketTypes'])
             ->where('organizer_id', $organizer->id);
 
         if (! empty($filters['status'])) {
@@ -621,6 +621,13 @@ class EventService
             $query->where(function (Builder $q) use ($cat) {
                 $q->where('event_format', 'like', $cat)
                     ->orWhere('event_category', 'like', $cat);
+            });
+        }
+
+        if (! empty($filters['organizerUuid'])) {
+            $orgUuid = (string) $filters['organizerUuid'];
+            $query->whereHas('organizer', function (Builder $oq) use ($orgUuid) {
+                $oq->where('uuid', $orgUuid)->orWhere('slug', $orgUuid);
             });
         }
     }

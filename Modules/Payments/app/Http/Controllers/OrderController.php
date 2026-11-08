@@ -32,8 +32,8 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.attendee_name' => 'nullable|string|max:255',
             'items.*.attendee_email' => 'nullable|email|max:255',
-            'customer_name' => 'nullable|string|max:255',
-            'customer_email' => 'nullable|email|max:255',
+            'customer_name' => $request->user() ? 'nullable|string|max:255' : 'required|string|max:255',
+            'customer_email' => $request->user() ? 'nullable|email|max:255' : 'required|email|max:255',
             'customer_phone' => 'nullable|string|max:50',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -70,12 +70,23 @@ class OrderController extends Controller
     {
         $order = $this->orderService->getOrder($orderUuid);
 
-        // Ensure user is authorized to view this order (buyer or organizer member)
+        // Ensure user is authorized to view this order (buyer, guest with guest_token, or organizer member)
         $user = $request->user();
-        if ($user && $order->user_id !== $user->id) {
-            $isOrganizerMember = $order->organizer->members()->where('user_id', $user->id)->exists();
-            if (! $isOrganizerMember && $order->organizer->user_id !== $user->id) {
-                return ApiResponse::error('Unauthorized to view this order.', 403);
+        if ($user) {
+            if ($order->user_id && $order->user_id !== $user->id) {
+                $organizer = $order->relationLoaded('organizer')
+                    ? $order->organizer
+                    : Organizer::with(['members'])->find($order->organizer_id);
+
+                if (! $organizer || ! $organizer->isMember($user)) {
+                    return ApiResponse::error('Unauthorized to view this order.', 403);
+                }
+            }
+        } else {
+            // For unauthenticated guest access, require guest_token header or query param if set on order
+            $guestToken = $request->header('X-Guest-Token') ?? $request->query('guest_token');
+            if ($order->guest_token && ($order->guest_token !== $guestToken || empty($guestToken))) {
+                return ApiResponse::error('Unauthorized to view this order. Valid guest token required.', 403);
             }
         }
 

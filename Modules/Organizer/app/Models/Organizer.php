@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Modules\Auth\app\Models\User;
 use Modules\Events\app\Models\Event;
+use Modules\Organizer\app\Enum\OrganizerMemberRole;
+use Modules\Organizer\app\Enum\OrganizerPermission;
 use Modules\Organizer\app\Enum\OrganizerType;
 use Modules\Organizer\app\Enum\OrganizerVerificationStatus;
 
@@ -105,5 +107,121 @@ class Organizer extends Model
     public function bank(): HasOne
     {
         return $this->hasOne(OrganizerBankAccounts::class, 'organizer_id');
+    }
+
+    /**
+     * Resolve the member role of the given user in this organization.
+     */
+    public function getRoleForUser(?User $user): ?OrganizerMemberRole
+    {
+        if (! $user) {
+            return null;
+        }
+
+        if ((int) $this->user_id === (int) $user->id) {
+            return OrganizerMemberRole::OWNER;
+        }
+
+        if (isset($this->pivot->role)) {
+            return $this->pivot->role instanceof OrganizerMemberRole
+                ? $this->pivot->role
+                : OrganizerMemberRole::tryFrom((string) $this->pivot->role);
+        }
+
+        if ($this->relationLoaded('members')) {
+            /** @var OrganizerMember|null $member */
+            $member = $this->members->firstWhere('user_id', $user->id);
+            if ($member?->role) {
+                return $member->role instanceof OrganizerMemberRole
+                    ? $member->role
+                    : OrganizerMemberRole::tryFrom((string) $member->role);
+            }
+        } else {
+            /** @var OrganizerMember|null $member */
+            $member = OrganizerMember::where('organizer_id', $this->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($member?->role) {
+                return $member->role;
+            }
+        }
+
+        if ($user->isAdministrator()) {
+            return OrganizerMemberRole::OWNER;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the granted permissions for the given user in this organization.
+     *
+     * @return array<int, string>
+     */
+    public function getPermissionsForUser(?User $user): array
+    {
+        if (! $user) {
+            return [];
+        }
+
+        if ((int) $this->user_id === (int) $user->id) {
+            return OrganizerMemberRole::OWNER->permissions();
+        }
+
+        /** @var OrganizerMember|null $member */
+        $member = null;
+        if ($this->relationLoaded('members')) {
+            $member = $this->members->firstWhere('user_id', $user->id);
+        } else {
+            $member = OrganizerMember::where('organizer_id', $this->id)
+                ->where('user_id', $user->id)
+                ->first();
+        }
+
+        if ($member) {
+            if (is_array($member->permissions)) {
+                return $member->permissions;
+            }
+
+            return $member->role?->permissions() ?? [];
+        }
+
+        if ($user->isAdministrator()) {
+            return OrganizerMemberRole::OWNER->permissions();
+        }
+
+        return [];
+    }
+
+    /**
+     * Determine whether the given user has the specified permission in this organization.
+     */
+    public function userHasPermission(?User $user, OrganizerPermission|string $permission): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdministrator()) {
+            return true;
+        }
+
+        $permString = $permission instanceof OrganizerPermission ? $permission->value : $permission;
+        $granted = $this->getPermissionsForUser($user);
+
+        if (in_array('*', $granted, true)) {
+            return true;
+        }
+
+        return in_array($permString, $granted, true);
+    }
+
+    /**
+     * Determine whether the given user is the owner or a team member of this organization.
+     */
+    public function isMember(?User $user): bool
+    {
+        return $this->getRoleForUser($user) !== null;
     }
 }

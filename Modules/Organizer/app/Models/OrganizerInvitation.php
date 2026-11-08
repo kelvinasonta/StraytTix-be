@@ -18,6 +18,7 @@ class OrganizerInvitation extends Model
         'organizer_id',
         'email',
         'role',
+        'permissions',
         'token',
         'invited_by',
         'expires_at',
@@ -28,6 +29,7 @@ class OrganizerInvitation extends Model
     {
         return [
             'role' => OrganizerMemberRole::class,
+            'permissions' => 'array',
             'expires_at' => 'datetime',
             'accepted_at' => 'datetime',
         ];

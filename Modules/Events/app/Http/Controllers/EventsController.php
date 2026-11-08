@@ -16,6 +16,7 @@ use Modules\Events\app\DTOs\EventScheduleItemDTO;
 use Modules\Events\app\DTOs\EventSettingDTO;
 use Modules\Events\app\Http\Requests\StoreEventRequest;
 use Modules\Events\app\Http\Requests\UpdateEventRequest;
+use Modules\Events\app\Models\EventStaff;
 use Modules\Events\app\Services\EventService;
 use Modules\Events\app\Transformers\EventResource;
 use Modules\Organizer\app\Enum\OrganizerMemberRole;
@@ -42,8 +43,16 @@ class EventsController extends Controller
         $isStaff = ($requesterRole instanceof OrganizerMemberRole && $requesterRole === OrganizerMemberRole::STAFF)
             || (is_string($requesterRole) && strtolower($requesterRole) === 'staff');
 
-        if ($isStaff || $request->boolean('assigned_only')) {
+        if ($request->boolean('assigned_only')) {
             $filters['assigned_user_id'] = $request->user()->id;
+        } elseif ($isStaff) {
+            $hasSpecificAssignments = EventStaff::where('user_id', $request->user()->id)
+                ->whereHas('event', fn ($q) => $q->where('organizer_id', $organizer->id))
+                ->exists();
+
+            if ($hasSpecificAssignments) {
+                $filters['assigned_user_id'] = $request->user()->id;
+            }
         }
 
         $events = $this->eventService->getOrganizerEvents($organizer, $filters);
@@ -251,6 +260,7 @@ class EventsController extends Controller
             'search',
             'eventType',
             'category',
+            'organizerUuid',
             'perPage',
         ]));
 

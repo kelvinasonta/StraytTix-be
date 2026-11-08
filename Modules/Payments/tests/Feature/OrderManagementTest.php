@@ -232,3 +232,118 @@ test('organizer can export orders as CSV', function () {
         ->toContain('Ada Lovelace')
         ->toContain('ada@example.com');
 });
+
+test('unauthenticated guest can create an order, initialize payment, and verify payment', function () {
+    // 1. Create order as guest (no auth)
+    $response = $this->postJson("/api/v1/events/{$this->event->uuid}/orders", [
+        'items' => [
+            [
+                'ticket_type_uuid' => $this->vipTicket->uuid,
+                'quantity' => 1,
+                'attendee_name' => 'Guest Attendee',
+                'attendee_email' => 'guest@example.com',
+            ],
+        ],
+        'customer_name' => 'Guest Attendee',
+        'customer_email' => 'guest@example.com',
+        'customer_phone' => '+2348099887766',
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.total', 50000)
+        ->assertJsonPath('data.customerEmail', 'guest@example.com');
+
+    $orderUuid = $response->json('data.id');
+    $guestToken = $response->json('data.guestToken');
+    expect($guestToken)->not->toBeEmpty();
+
+    $this->assertDatabaseHas('orders', [
+        'uuid' => $orderUuid,
+        'user_id' => null,
+        'customer_email' => 'guest@example.com',
+        'status' => 'pending',
+    ]);
+
+    // 2. Unauthorized access without guest token is rejected with 403
+    $unauthShowRes = $this->getJson("/api/v1/orders/{$orderUuid}");
+    $unauthShowRes->assertStatus(403);
+
+    // 3. Guest can view order using guest token
+    $showRes = $this->withHeader('X-Guest-Token', $guestToken)
+        ->getJson("/api/v1/orders/{$orderUuid}");
+
+    $showRes->assertStatus(200)
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.id', $orderUuid);
+
+    // 4. Guest can initialize payment using guest token
+    $initRes = $this->withHeader('X-Guest-Token', $guestToken)
+        ->postJson("/api/v1/orders/{$orderUuid}/payments", [
+            'gateway' => 'paystack',
+        ]);
+
+    $initRes->assertStatus(200)
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.status', 'pending');
+
+    $reference = $initRes->json('data.reference');
+    expect($reference)->not->toBeEmpty();
+
+    // 5. Guest can verify payment by gateway reference
+    $verifyRes = $this->getJson("/api/v1/payments/verify/{$reference}");
+
+    $verifyRes->assertStatus(200)
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.status', 'paid')
+        ->assertJsonCount(1, 'data.tickets');
+
+    $this->assertDatabaseHas('orders', [
+        'uuid' => $orderUuid,
+        'status' => 'paid',
+        'user_id' => null,
+    ]);
+
+    $this->assertDatabaseHas('tickets', [
+        'order_id' => Order::where('uuid', $orderUuid)->value('id'),
+        'user_id' => null,
+        'attendee_name' => 'Guest Attendee',
+        'attendee_email' => 'guest@example.com',
+        'status' => 'valid',
+    ]);
+});
+
+test('unauthenticated guest can reserve free tickets directly', function () {
+    $response = $this->postJson("/api/v1/events/{$this->event->uuid}/orders", [
+        'items' => [
+            [
+                'ticket_type_uuid' => $this->freeTicket->uuid,
+                'quantity' => 2,
+                'attendee_name' => 'Free Guest',
+                'attendee_email' => 'freeguest@example.com',
+            ],
+        ],
+        'customer_name' => 'Free Guest',
+        'customer_email' => 'freeguest@example.com',
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.status', 'paid')
+        ->assertJsonPath('data.total', 0)
+        ->assertJsonCount(2, 'data.tickets');
+
+    $this->assertDatabaseHas('orders', [
+        'user_id' => null,
+        'customer_email' => 'freeguest@example.com',
+        'status' => 'paid',
+    ]);
+
+    $this->assertDatabaseHas('tickets', [
+        'user_id' => null,
+        'ticket_type_id' => $this->freeTicket->id,
+        'attendee_email' => 'freeguest@example.com',
+        'status' => 'valid',
+    ]);
+});

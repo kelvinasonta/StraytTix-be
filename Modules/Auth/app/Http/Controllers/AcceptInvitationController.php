@@ -27,13 +27,16 @@ class AcceptInvitationController extends Controller
     {
         $token = $request->validated('token');
         $invitation = $this->acceptInvitationService->verify($token);
+        $userExists = User::where('email', $invitation->email)->exists();
 
         return ApiResponse::success(
             'Invitation token is valid.',
             [
                 'email' => $invitation->email,
                 'role' => $invitation->role->value,
+                'role_label' => $invitation->role->label(),
                 'organizer_name' => $invitation->organizer?->name,
+                'user_exists' => $userExists,
                 'expires_at' => $invitation->expires_at,
             ],
             200
@@ -63,13 +66,14 @@ class AcceptInvitationController extends Controller
                 }
             }
 
-            OrganizerMember::firstOrCreate(
+            OrganizerMember::updateOrCreate(
                 [
                     'organizer_id' => $invitation->organizer_id,
                     'user_id' => $user->id,
                 ],
                 [
                     'role' => $invitation->role,
+                    'permissions' => $invitation->permissions,
                 ]
             );
 
@@ -82,11 +86,13 @@ class AcceptInvitationController extends Controller
             return [$user, $token];
         });
 
+        $organizer = $invitation->organizer->fresh(['members']);
+
         return ApiResponse::success(
             'Invitation accepted successfully.',
             [
                 'user' => new UserResource($user),
-                'organizer' => new OrganizerResource($invitation->organizer, false, $user),
+                'organizer' => new OrganizerResource($organizer, true, $user),
                 'token' => $authToken,
             ],
             200
