@@ -37,7 +37,8 @@ class OrganizerInvitationController extends Controller
             $request->user(),
             $requesterRole,
             $request->validated('email'),
-            $request->validated('role')
+            $request->validated('role'),
+            $request->validated('permissions')
         );
 
         return ApiResponse::success(

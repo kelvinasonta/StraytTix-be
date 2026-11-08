@@ -48,7 +48,7 @@ def admin_session(base_url):
         # Dynamic login fallback against local dev seeder
         res = session.post(f"{base_url}/auth/login", json={
             "email": "admin@eventsos.com",
-            "password": "password",
+            "password": "Password123!",
         })
         if res.status_code == 200:
             token = res.json().get("data", {}).get("token")
@@ -70,7 +70,7 @@ def user_a_session(base_url):
         # Dynamic login fallback against local dev seeder
         res = session.post(f"{base_url}/auth/login", json={
             "email": "organizer@eventsos.com",
-            "password": "password",
+            "password": "Password123!",
         })
         if res.status_code == 200:
             token = res.json().get("data", {}).get("token")
@@ -97,6 +97,7 @@ def user_b_session(base_url):
             "password": "Password123!",
             "password_confirmation": "Password123!",
             "account_type": "organizer",
+            "organizer_type": "individual",
         })
         if res.status_code in [200, 201]:
             token = res.json().get("data", {}).get("token")
@@ -176,12 +177,15 @@ def tenant_resources(base_url, user_a_session, user_b_session):
             create_res = user_b_session.post(f"{base_url}/organizers/{resources['user_b_organizer']}/events", json={
                 "title": "Tenant B Private Event",
                 "description": "Tenant B Isolated Event for IDOR security tests",
-                "event_country": "Nigeria",
-                "event_type": "physical",
-                "event_format": "Conference",
-                "event_category": ["Security"],
-                "status": "draft",
-                "visibility": "private",
+                "eventCountry": "Nigeria",
+                "eventType": "virtual",
+                "onlineMeetingUrl": "https://meet.google.com/abc-defg-hij",
+                "scheduleType": "single",
+                "scheduleTimezone": "UTC",
+                "startDate": "2027-01-01",
+                "startTime": "10:00",
+                "endDate": "2027-01-01",
+                "endTime": "12:00",
             })
             if create_res.status_code in [200, 201]:
                 resources["user_b_event"] = create_res.json().get("data", {}).get("id")

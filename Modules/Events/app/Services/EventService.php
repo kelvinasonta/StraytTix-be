@@ -623,6 +623,13 @@ class EventService
                     ->orWhere('event_category', 'like', $cat);
             });
         }
+
+        if (! empty($filters['organizerUuid'])) {
+            $orgUuid = (string) $filters['organizerUuid'];
+            $query->whereHas('organizer', function (Builder $oq) use ($orgUuid) {
+                $oq->where('uuid', $orgUuid)->orWhere('slug', $orgUuid);
+            });
+        }
     }
 
     /**

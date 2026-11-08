@@ -34,3 +34,4 @@ text.txt
 # Docker & local storage data
 docker/data/
 docker-compose.override.yml
+.venv*

@@ -11,8 +11,11 @@ class AcceptInvitationService
     {
         $tokenHash = hash('sha256', $token);
 
-        $invitation = OrganizerInvitation::where('token', $tokenHash)
-            ->orWhere('token', $token)
+        $invitation = OrganizerInvitation::with(['organizer.members'])
+            ->where(function ($query) use ($tokenHash, $token) {
+                $query->where('token', $tokenHash)
+                    ->orWhere('token', $token);
+            })
             ->first();
 
         if (! $invitation || ! $invitation->isPending()) {

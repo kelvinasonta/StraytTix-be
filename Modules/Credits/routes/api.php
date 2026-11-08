@@ -11,7 +11,7 @@ Route::prefix('v1')->group(function () {
     Route::post('credits/webhooks/{gateway}', [CreditTopupController::class, 'webhook']);
 
     // Authenticated Organizer Scoped Credit Routes
-    Route::middleware(['auth:sanctum', 'organizer.role:owner,admin,manager'])
+    Route::middleware(['auth:sanctum', 'organizer.role:org.credits.manage'])
         ->prefix('organizers/{organizerUuid}/credits')
         ->group(function () {
             Route::get('wallet', [CreditWalletController::class, 'show']);

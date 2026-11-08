@@ -15,6 +15,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Modules\Auth\app\Enum\UserStatus;
 use Modules\Events\app\Models\Favorite;
 use Modules\Organizer\app\Models\Organizer;
+use Modules\Organizer\app\Models\OrganizerMember;
 use Modules\Tickets\app\Models\Ticket;
 
 class User extends Authenticatable
@@ -145,5 +146,40 @@ class User extends Authenticatable
         return $this->belongsToMany(Organizer::class, 'organizer_members', 'user_id', 'organizer_id')
             ->withPivot(['id', 'role'])
             ->withTimestamps();
+    }
+
+    /**
+     * Resolve the active organizer for this user without lazy-loading violations.
+     */
+    public function resolveActiveOrganizer(?string $organizerIdentifier = null): ?Organizer
+    {
+        if ($organizerIdentifier) {
+            $requested = Organizer::with(['members'])
+                ->where(function ($query) use ($organizerIdentifier) {
+                    $query->where('uuid', $organizerIdentifier)
+                        ->orWhere('slug', $organizerIdentifier)
+                        ->orWhere('id', $organizerIdentifier);
+                })
+                ->first();
+
+            if ($requested && $requested->isMember($this)) {
+                return $requested;
+            }
+        }
+
+        $owned = Organizer::with(['members'])->where('user_id', $this->id)->first();
+        if ($owned) {
+            return $owned;
+        }
+
+        $memberOrganizerId = OrganizerMember::where('user_id', $this->id)
+            ->latest('updated_at')
+            ->value('organizer_id');
+
+        if ($memberOrganizerId) {
+            return Organizer::with(['members'])->find($memberOrganizerId);
+        }
+
+        return null;
     }
 }

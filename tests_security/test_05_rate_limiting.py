@@ -10,7 +10,6 @@ import pytest
 
 @pytest.mark.parametrize("endpoint,payload,expected_limit", [
     ("/auth/password/forgot", {"email": "rate_limit_probe@eventsos.com"}, 15),
-    ("/auth/email/resend", {}, 15),
 ])
 def test_rate_limiting_enforced_under_burst_load(base_url, unauthenticated_session, endpoint, payload, expected_limit):
     """

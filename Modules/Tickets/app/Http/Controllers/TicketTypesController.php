@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Modules\Events\app\Models\Event;
+use Modules\Tickets\app\Models\TicketType;
 use Modules\Tickets\app\Services\TicketService;
 use Modules\Tickets\app\Transformers\TicketTypeResource;
 
@@ -34,6 +37,11 @@ class TicketTypesController extends Controller
      */
     public function store(Request $request, string $eventUuid): JsonResponse
     {
+        $event = Event::with(['organizer.members'])->where('uuid', $eventUuid)->firstOrFail();
+        if (! Gate::forUser($request->user())->allows('update', $event)) {
+            return ApiResponse::error('Unauthorized to manage ticket types for this event.', 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:free,paid',
@@ -63,6 +71,11 @@ class TicketTypesController extends Controller
      */
     public function update(Request $request, string $ticketTypeUuid): JsonResponse
     {
+        $ticketType = TicketType::with(['event.organizer.members'])->where('uuid', $ticketTypeUuid)->firstOrFail();
+        if (! Gate::forUser($request->user())->allows('update', $ticketType->event)) {
+            return ApiResponse::error('Unauthorized to update this ticket type.', 403);
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'type' => 'sometimes|required|in:free,paid',
@@ -89,8 +102,13 @@ class TicketTypesController extends Controller
     /**
      * Delete a ticket type.
      */
-    public function destroy(string $ticketTypeUuid): JsonResponse
+    public function destroy(Request $request, string $ticketTypeUuid): JsonResponse
     {
+        $ticketType = TicketType::with(['event.organizer.members'])->where('uuid', $ticketTypeUuid)->firstOrFail();
+        if (! Gate::forUser($request->user())->allows('update', $ticketType->event)) {
+            return ApiResponse::error('Unauthorized to delete this ticket type.', 403);
+        }
+
         try {
             $this->ticketService->deleteTicketType($ticketTypeUuid);
 

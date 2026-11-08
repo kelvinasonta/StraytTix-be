@@ -113,7 +113,7 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
                     $idemStmt->execute([$wallet->id, $idempotencyKey]);
                     if ($idemStmt->fetch()) {
                         $childPdo->exec('COMMIT;');
-                        exit(0);
+                        posix__exit(0);
                     }
 
                     // Select wallet with row lock equivalent (IMMEDIATE transaction holds reserved lock)
@@ -127,7 +127,7 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
 
                     if ($available < $debitAmount) {
                         $childPdo->exec('ROLLBACK;');
-                        exit(2); // Insufficient credits code
+                        posix__exit(2); // Insufficient credits code
                     }
 
                     $balanceAfter = $balance - $debitAmount;
@@ -154,7 +154,7 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
 
                     $childPdo->exec('COMMIT;');
                     $processed = true;
-                    exit(0); // Success code
+                    posix__exit(0); // Success code
                 } catch (PDOException $e) {
                     try {
                         $childPdo->exec('ROLLBACK;');
@@ -168,11 +168,11 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
                         continue;
                     }
 
-                    exit(1); // Unexpected error code
+                    posix__exit(1); // Unexpected error code
                 }
             }
 
-            exit(1);
+            posix__exit(1);
         } else {
             $pids[] = $pid;
         }

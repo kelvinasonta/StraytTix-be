@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Models\User;
 use Modules\Organizer\app\Enum\OrganizerMemberRole;
+use Modules\Organizer\app\Enum\OrganizerPermission;
 use Modules\Organizer\app\Events\OrganizerInvitationCreatedEvent;
 use Modules\Organizer\app\Exceptions\OrganizerInvitationAlreadyAcceptedException;
 use Modules\Organizer\app\Exceptions\OrganizerInvitationFailedException;
@@ -138,7 +139,8 @@ class OrganizerInvitationService extends BaseCacheManager
         User $inviter,
         OrganizerMemberRole $requesterRole,
         string $email,
-        string $roleString
+        string $roleString,
+        ?array $permissions = null
     ): void {
         $targetRole = OrganizerMemberRole::from($roleString);
         if (! $requesterRole->canManageRole($targetRole)) {
@@ -163,13 +165,34 @@ class OrganizerInvitationService extends BaseCacheManager
         $invitationToken = Str::random(40);
         $invitationTokenHashed = hash('sha256', $invitationToken);
 
+        $sanitizedPermissions = null;
+        if (is_array($permissions)) {
+            $allowedValues = OrganizerPermission::values();
+            $sanitizedPermissions = array_values(array_unique(array_filter(
+                $permissions,
+                fn ($p) => is_string($p) && in_array($p, $allowedValues, true)
+            )));
+        }
+
+        $sanitizedPermissions = null;
+        if (is_array($permissions)) {
+            $allowedValues = OrganizerPermission::values();
+            $sanitizedPermissions = array_values(array_unique(array_filter(
+                $permissions,
+                fn ($p) => is_string($p) && in_array($p, $allowedValues, true)
+            )));
+        }
+
         try {
-            $invitation = DB::transaction(function () use ($organizer, $inviter, $targetRole, $email, $invitationTokenHashed) {
-                $invitation = OrganizerInvitation::create(
+            $invitation = DB::transaction(function () use ($organizer, $inviter, $targetRole, $email, $invitationTokenHashed, $sanitizedPermissions) {
+                $invitation = OrganizerInvitation::updateOrCreate(
                     [
                         'organizer_id' => $organizer->id,
                         'email' => $email,
+                    ],
+                    [
                         'role' => $targetRole,
+                        'permissions' => $sanitizedPermissions,
                         'invited_by' => $inviter->id,
                         'token' => $invitationTokenHashed,
                         'expires_at' => now()->addDays(7),
@@ -194,8 +217,10 @@ class OrganizerInvitationService extends BaseCacheManager
             $emailData = [
                 'email' => $invitation->email,
                 'organizer_name' => $organizer->name,
+                'role' => $invitation->role instanceof \BackedEnum ? $invitation->role->value : (string) $invitation->role,
                 'invitation_token' => $invitationToken,
                 'expires_at' => $invitation->expires_at,
+                'is_resend' => false,
             ];
 
             event(new OrganizerInvitationCreatedEvent($emailData));
@@ -257,8 +282,10 @@ class OrganizerInvitationService extends BaseCacheManager
             $emailData = [
                 'email' => $invitation->email,
                 'organizer_name' => $organizer->name,
+                'role' => $invitation->role instanceof \BackedEnum ? $invitation->role->value : (string) $invitation->role,
                 'invitation_token' => $invitationToken,
                 'expires_at' => $invitation->expires_at,
+                'is_resend' => true,
             ];
 
             event(new OrganizerInvitationCreatedEvent($emailData));

@@ -19,9 +19,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::prefix('organizers')->group(function () {
         Route::get('/', [OrganizerController::class, 'index']);
         Route::post('/', [OrganizerController::class, 'store']);
-        Route::get('/{organizerUuid}', [OrganizerController::class, 'show']);
-        Route::put('/{organizerUuid}', [OrganizerController::class, 'update'])->middleware('organizer.role:owner,admin');
-        Route::delete('/{organizerUuid}', [OrganizerController::class, 'destroy'])->middleware('organizer.role:owner');
+        Route::get('/{organizerUuid}', [OrganizerController::class, 'show'])->middleware('organizer.role:org.view');
+        Route::put('/{organizerUuid}', [OrganizerController::class, 'update'])->middleware('organizer.role:org.update');
+        Route::delete('/{organizerUuid}', [OrganizerController::class, 'destroy'])->middleware('organizer.role:org.delete');
     });
 
     // Bank resolution and supported banks list
@@ -33,30 +33,32 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::prefix('organizers/{organizerUuid}')->group(function () {
         // Settlement Bank Account
         Route::prefix('bank-account')->group(function () {
-            Route::get('/', [OrganizerBankAccountController::class, 'show'])->middleware('organizer.role:owner,admin,finance');
-            Route::post('/', [OrganizerBankAccountController::class, 'store'])->middleware('organizer.role:owner,admin,finance');
+            Route::get('/', [OrganizerBankAccountController::class, 'show'])->middleware('organizer.role:org.finance.view');
+            Route::post('/', [OrganizerBankAccountController::class, 'store'])->middleware('organizer.role:org.finance.manage');
         });
 
         // Verification
         Route::prefix('verification')->group(function () {
-            Route::get('/', [OrganizerVerificationController::class, 'show'])->middleware('organizer.role:owner,admin');
-            Route::post('/', [OrganizerVerificationController::class, 'store'])->middleware('organizer.role:owner,admin');
+            Route::get('/', [OrganizerVerificationController::class, 'show'])->middleware('organizer.role:org.verification.view');
+            Route::post('/', [OrganizerVerificationController::class, 'store'])->middleware('organizer.role:org.verification.manage');
         });
 
-        // Team Members
+        // Team Members & Role Metadata
+        Route::get('roles', [OrganizerMemberController::class, 'roles'])->middleware('organizer.role:org.view');
+
         Route::prefix('members')->group(function () {
-            Route::get('/', [OrganizerMemberController::class, 'index'])->middleware('organizer.role:owner,admin');
-            Route::post('/', [OrganizerMemberController::class, 'store'])->middleware('organizer.role:owner,admin');
-            Route::put('/{memberUuid}', [OrganizerMemberController::class, 'update'])->middleware('organizer.role:owner,admin');
-            Route::delete('/{memberUuid}', [OrganizerMemberController::class, 'destroy'])->middleware('organizer.role:owner,admin');
+            Route::get('/', [OrganizerMemberController::class, 'index'])->middleware('organizer.role:org.members.view');
+            Route::post('/', [OrganizerMemberController::class, 'store'])->middleware('organizer.role:org.members.manage');
+            Route::put('/{memberUuid}', [OrganizerMemberController::class, 'update'])->middleware('organizer.role:org.members.manage');
+            Route::delete('/{memberUuid}', [OrganizerMemberController::class, 'destroy'])->middleware('organizer.role:org.members.manage');
         });
 
         // Team Invitations
         Route::prefix('invitations')->group(function () {
-            Route::get('/', [OrganizerInvitationController::class, 'index'])->middleware('organizer.role:owner,admin');
-            Route::post('/', [OrganizerInvitationController::class, 'store'])->middleware('organizer.role:owner,admin');
-            Route::post('/{invitationUuid}/resend', [OrganizerInvitationController::class, 'resend'])->middleware('organizer.role:owner,admin');
-            Route::delete('/{invitationUuid}', [OrganizerInvitationController::class, 'destroy'])->middleware('organizer.role:owner,admin');
+            Route::get('/', [OrganizerInvitationController::class, 'index'])->middleware('organizer.role:org.members.view');
+            Route::post('/', [OrganizerInvitationController::class, 'store'])->middleware('organizer.role:org.members.manage');
+            Route::post('/{invitationUuid}/resend', [OrganizerInvitationController::class, 'resend'])->middleware('organizer.role:org.members.manage');
+            Route::delete('/{invitationUuid}', [OrganizerInvitationController::class, 'destroy'])->middleware('organizer.role:org.members.manage');
         });
     });
 });

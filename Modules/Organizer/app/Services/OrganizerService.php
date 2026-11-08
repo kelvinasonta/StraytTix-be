@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Auth\app\Models\User;
 use Modules\Organizer\app\Actions\UpdateOrganizerAction;
 use Modules\Organizer\app\Enum\OrganizerMemberRole;
+use Modules\Organizer\app\Enum\OrganizerPermission;
 use Modules\Organizer\app\Exceptions\OrganizerFetchFailed;
 use Modules\Organizer\app\Models\Organizer;
 use Modules\Organizer\app\Models\OrganizerMember;
@@ -24,8 +25,11 @@ class OrganizerService
     {
         $organizerIds = OrganizerMember::where('user_id', $user->id)->pluck('organizer_id');
 
-        return Organizer::where('user_id', $user->id)
-            ->orWhereIn('id', $organizerIds)
+        return Organizer::with(['members'])
+            ->where(function ($query) use ($user, $organizerIds) {
+                $query->where('user_id', $user->id)
+                    ->orWhereIn('id', $organizerIds);
+            })
             ->latest()
             ->paginate($perPage);
     }
@@ -36,12 +40,15 @@ class OrganizerService
     public function getForUser(User $user, ?string $uuid = null): Organizer
     {
         if ($uuid) {
-            $organizer = Organizer::where('uuid', $uuid)->orWhere('slug', $uuid)->first();
+            $organizer = Organizer::with(['members'])
+                ->where('uuid', $uuid)
+                ->orWhere('slug', $uuid)
+                ->first();
         } else {
-            $organizer = Organizer::where('user_id', $user->id)->first();
+            $organizer = $user->resolveActiveOrganizer();
         }
 
-        if (! $organizer) {
+        if (! $organizer || ! $organizer->isMember($user)) {
             throw new OrganizerFetchFailed;
         }
 
@@ -90,24 +97,17 @@ class OrganizerService
      */
     public function update(User $user, string $uuid, array $data): Organizer
     {
-        $organizer = Organizer::where('uuid', $uuid)->orWhere('slug', $uuid)->first();
+        $organizer = Organizer::with(['members'])
+            ->where('uuid', $uuid)
+            ->orWhere('slug', $uuid)
+            ->first();
 
-        if (! $organizer) {
-            throw new OrganizerFetchFailed;
-        }
-
-        $isOwner = $organizer->user_id === $user->id;
-        $isAuthorizedMember = OrganizerMember::where('organizer_id', $organizer->id)
-            ->where('user_id', $user->id)
-            ->whereIn('role', [OrganizerMemberRole::OWNER, OrganizerMemberRole::ADMIN])
-            ->exists();
-
-        if (! $isOwner && ! $isAuthorizedMember) {
+        if (! $organizer || ! $organizer->userHasPermission($user, OrganizerPermission::ORG_UPDATE)) {
             throw new OrganizerFetchFailed;
         }
 
         $organizer = $this->updateOrganizerAction->handle($organizer, $data);
-        $organizer->load(['owner'])->loadCount('members');
+        $organizer->load(['owner', 'members'])->loadCount('members');
 
         return $organizer;
     }
@@ -117,13 +117,12 @@ class OrganizerService
      */
     public function delete(User $user, string $uuid): bool
     {
-        $organizer = Organizer::where('uuid', $uuid)->orWhere('slug', $uuid)->first();
+        $organizer = Organizer::with(['members'])
+            ->where('uuid', $uuid)
+            ->orWhere('slug', $uuid)
+            ->first();
 
-        if (! $organizer) {
-            throw new OrganizerFetchFailed;
-        }
-
-        if ($organizer->user_id !== $user->id) {
+        if (! $organizer || ! $organizer->userHasPermission($user, OrganizerPermission::ORG_DELETE)) {
             throw new OrganizerFetchFailed;
         }
 

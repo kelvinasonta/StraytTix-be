@@ -10,10 +10,12 @@ class RegisterRequest extends FormRequest
 {
     protected function prepareForValidation()
     {
-        $this->merge([
-            // Convert the email to lowercase before validation
-            'email' => Str::lower($this->email),
-        ]);
+        if (is_string($this->email)) {
+            $this->merge([
+                // Convert the email to lowercase before validation
+                'email' => Str::lower($this->email),
+            ]);
+        }
     }
 
     /**

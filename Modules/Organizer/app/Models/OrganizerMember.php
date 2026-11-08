@@ -16,12 +16,14 @@ class OrganizerMember extends Model
         'user_id',
         'organizer_id',
         'role',
+        'permissions',
     ];
 
     protected function casts(): array
     {
         return [
             'role' => OrganizerMemberRole::class,
+            'permissions' => 'array',
         ];
     }
 

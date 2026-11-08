@@ -98,6 +98,11 @@ class Event extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function collaborators(): HasMany
+    {
+        return $this->hasMany(EventCollaborator::class);
+    }
+
     public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);

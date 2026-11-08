@@ -74,8 +74,11 @@ class OrderController extends Controller
         $user = $request->user();
         if ($user) {
             if ($order->user_id && $order->user_id !== $user->id) {
-                $isOrganizerMember = $order->organizer->members()->where('user_id', $user->id)->exists();
-                if (! $isOrganizerMember && $order->organizer->user_id !== $user->id) {
+                $organizer = $order->relationLoaded('organizer')
+                    ? $order->organizer
+                    : Organizer::with(['members'])->find($order->organizer_id);
+
+                if (! $organizer || ! $organizer->isMember($user)) {
                     return ApiResponse::error('Unauthorized to view this order.', 403);
                 }
             }

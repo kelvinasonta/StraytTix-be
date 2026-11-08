@@ -43,6 +43,149 @@ class EventMetadataController extends Controller
         'Career & Networking',
     ];
 
+    private const DEFAULT_COUNTRIES = [
+        [
+            'code' => 'NG',
+            'iso2' => 'NG',
+            'iso3' => 'NGA',
+            'name' => 'Nigeria',
+            'dial_code' => '+234',
+            'currency' => 'NGN',
+            'currency_symbol' => '₦',
+            'flag' => '🇳🇬',
+        ],
+        [
+            'code' => 'GH',
+            'iso2' => 'GH',
+            'iso3' => 'GHA',
+            'name' => 'Ghana',
+            'dial_code' => '+233',
+            'currency' => 'GHS',
+            'currency_symbol' => 'GH₵',
+            'flag' => '🇬🇭',
+        ],
+        [
+            'code' => 'KE',
+            'iso2' => 'KE',
+            'iso3' => 'KEN',
+            'name' => 'Kenya',
+            'dial_code' => '+254',
+            'currency' => 'KES',
+            'currency_symbol' => 'KSh',
+            'flag' => '🇰🇪',
+        ],
+        [
+            'code' => 'ZA',
+            'iso2' => 'ZA',
+            'iso3' => 'ZAF',
+            'name' => 'South Africa',
+            'dial_code' => '+27',
+            'currency' => 'ZAR',
+            'currency_symbol' => 'R',
+            'flag' => '🇿🇦',
+        ],
+        [
+            'code' => 'RW',
+            'iso2' => 'RW',
+            'iso3' => 'RWA',
+            'name' => 'Rwanda',
+            'dial_code' => '+250',
+            'currency' => 'RWF',
+            'currency_symbol' => 'FRw',
+            'flag' => '🇷🇼',
+        ],
+        [
+            'code' => 'UG',
+            'iso2' => 'UG',
+            'iso3' => 'UGA',
+            'name' => 'Uganda',
+            'dial_code' => '+256',
+            'currency' => 'UGX',
+            'currency_symbol' => 'USh',
+            'flag' => '🇺🇬',
+        ],
+        [
+            'code' => 'TZ',
+            'iso2' => 'TZ',
+            'iso3' => 'TZA',
+            'name' => 'Tanzania',
+            'dial_code' => '+255',
+            'currency' => 'TZS',
+            'currency_symbol' => 'TSh',
+            'flag' => '🇹🇿',
+        ],
+        [
+            'code' => 'CI',
+            'iso2' => 'CI',
+            'iso3' => 'CIV',
+            'name' => "Côte d'Ivoire",
+            'dial_code' => '+225',
+            'currency' => 'XOF',
+            'currency_symbol' => 'CFA',
+            'flag' => '🇨🇮',
+        ],
+        [
+            'code' => 'SN',
+            'iso2' => 'SN',
+            'iso3' => 'SEN',
+            'name' => 'Senegal',
+            'dial_code' => '+221',
+            'currency' => 'XOF',
+            'currency_symbol' => 'CFA',
+            'flag' => '🇸🇳',
+        ],
+        [
+            'code' => 'EG',
+            'iso2' => 'EG',
+            'iso3' => 'EGY',
+            'name' => 'Egypt',
+            'dial_code' => '+20',
+            'currency' => 'EGP',
+            'currency_symbol' => 'E£',
+            'flag' => '🇪🇬',
+        ],
+        [
+            'code' => 'GB',
+            'iso2' => 'GB',
+            'iso3' => 'GBR',
+            'name' => 'United Kingdom',
+            'dial_code' => '+44',
+            'currency' => 'GBP',
+            'currency_symbol' => '£',
+            'flag' => '🇬🇧',
+        ],
+        [
+            'code' => 'US',
+            'iso2' => 'US',
+            'iso3' => 'USA',
+            'name' => 'United States',
+            'dial_code' => '+1',
+            'currency' => 'USD',
+            'currency_symbol' => '$',
+            'flag' => '🇺🇸',
+        ],
+        [
+            'code' => 'CA',
+            'iso2' => 'CA',
+            'iso3' => 'CAN',
+            'name' => 'Canada',
+            'dial_code' => '+1',
+            'currency' => 'CAD',
+            'currency_symbol' => 'CA$',
+            'flag' => '🇨🇦',
+        ],
+        [
+            'code' => 'AE',
+            'iso2' => 'AE',
+            'iso3' => 'ARE',
+            'name' => 'United Arab Emirates',
+            'dial_code' => '+971',
+            'currency' => 'AED',
+            'currency_symbol' => 'AED',
+            'flag' => '🇦🇪',
+        ],
+    ];
+
     /**
      * Retrieve list of event formats.
      */
@@ -96,6 +239,17 @@ class EventMetadataController extends Controller
         return ApiResponse::success(
             'Event categories retrieved successfully.',
             self::DEFAULT_CATEGORIES
+        );
+    }
+
+    /**
+     * Retrieve supported countries and currencies for events and organizer profiles.
+     */
+    public function countries(): JsonResponse
+    {
+        return ApiResponse::success(
+            'Countries retrieved successfully.',
+            self::DEFAULT_COUNTRIES
         );
     }
 }

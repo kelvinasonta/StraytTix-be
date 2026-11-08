@@ -22,11 +22,11 @@ class LoginService
 
         $expiresAt = $dto->remember ? now()->addDays(30) : now()->addHours(2);
 
-        $organizer = $user->ownedOrganizers ?? $user->organizers->first();
+        $organizer = $user->resolveActiveOrganizer();
 
         return [
             'user' => new UserResource($user),
-            'organizer' => $organizer ? new OrganizerResource($organizer, false, $user) : null,
+            'organizer' => $organizer ? new OrganizerResource($organizer, true, $user) : null,
             'token' => $user->createToken(
                 $userAgent,
                 ['*'],
