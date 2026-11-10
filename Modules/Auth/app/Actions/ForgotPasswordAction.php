@@ -22,6 +22,8 @@ class ForgotPasswordAction
                 throw new UserNotActiveException($user->status);
             }
 
+            PasswordResetToken::where('user_id', $user->id)->delete();
+
             $rawToken = Str::random(60);
 
             $data = [
@@ -29,8 +31,6 @@ class ForgotPasswordAction
                 'token' => hash('sha256', $rawToken),
                 'expires_at' => now()->addMinutes(30),
             ];
-
-            PasswordResetToken::where('user_id', $user->id)->delete();
 
             PasswordResetToken::create($data);
 

@@ -5,6 +5,7 @@ use Modules\Admin\app\Http\Controllers\AdminAuditLogController;
 use Modules\Admin\app\Http\Controllers\AdminAuthController;
 use Modules\Admin\app\Http\Controllers\AdminVerificationController;
 use Modules\Admin\app\Http\Controllers\FeatureFlagController;
+use Modules\Shared\app\Http\Controllers\AppSettingsController;
 
 Route::prefix('v1/admin')->group(function () {
     // Public administrative authentication (Rate-limited: 5 attempts per minute)
@@ -20,6 +21,16 @@ Route::prefix('v1/admin')->group(function () {
         // System feature flags (Super-admin or system_settings.manage)
         Route::post('feature-flags/{feature}/toggle', [FeatureFlagController::class, 'toggle'])
             ->middleware('admin.auth:system_settings.manage');
+
+        // Application Settings & Platform Fee configuration
+        Route::prefix('settings')->group(function () {
+            Route::get('/', [AppSettingsController::class, 'index'])
+                ->middleware('admin.auth:system_settings.view');
+            Route::post('/', [AppSettingsController::class, 'store'])
+                ->middleware('admin.auth:system_settings.manage');
+            Route::put('/', [AppSettingsController::class, 'store'])
+                ->middleware('admin.auth:system_settings.manage');
+        });
 
         // KYC & Organizer verifications (Requires organizers.verify permission)
         Route::prefix('verifications')->group(function () {

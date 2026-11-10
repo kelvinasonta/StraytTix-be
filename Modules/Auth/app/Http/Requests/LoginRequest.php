@@ -4,7 +4,6 @@ namespace Modules\Auth\app\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 
 class LoginRequest extends FormRequest
 {
@@ -28,11 +27,7 @@ class LoginRequest extends FormRequest
             'password' => [
                 'required',
                 'string',
-                Password::min(8)
-                    ->letters()
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols(),
+                'min:8',
             ],
             'remember' => 'nullable|boolean',
         ];

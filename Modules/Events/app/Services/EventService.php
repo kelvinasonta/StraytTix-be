@@ -28,6 +28,7 @@ use Modules\Events\app\DTOs\EventScheduleItemDTO;
 use Modules\Events\app\DTOs\EventSettingDTO;
 use Modules\Events\app\Enum\EventStatus;
 use Modules\Events\app\Enum\EventVisibility;
+use Modules\Events\app\Events\EventCreatedEvent;
 use Modules\Events\app\Exceptions\CannotPublishWithoutTickets;
 use Modules\Events\app\Exceptions\EventAlreadyExist;
 use Modules\Events\app\Exceptions\PublishedAlready;
@@ -221,6 +222,9 @@ class EventService
                     'event_uuid' => $event->uuid,
                 ]
             );
+
+            // Dispatch event to trigger confirmation email to creator
+            event(new EventCreatedEvent($event, $organizer, $creator));
 
             return $event->loadMissing(self::DEFAULT_RELATIONS);
         });

@@ -13,12 +13,14 @@ use Modules\Payments\app\Enums\OrderStatus;
 use Modules\Payments\app\Exceptions\OrderException;
 use Modules\Payments\app\Models\Order;
 use Modules\Payments\app\Models\OrderItem;
+use Modules\Shared\app\Contracts\AppSettingsServiceInterface;
 use Modules\Tickets\app\Models\TicketType;
 
 class OrderService
 {
     public function __construct(
-        protected PaymentService $paymentService
+        protected PaymentService $paymentService,
+        protected ?AppSettingsServiceInterface $settingsService = null,
     ) {}
 
     /**
@@ -89,8 +91,19 @@ class OrderService
             }
 
             $discount = 0.00;
+
+            // Calculate platform service fee dynamically from app settings (if total subtotal > 0)
             $serviceFee = 0.00;
-            $total = max(0.00, $subtotal - $discount + $serviceFee);
+            if ($subtotal > 0.00) {
+                $totalTickets = (int) array_sum(array_column($preparedItems, 'quantity'));
+                $serviceFee = $this->calculatePlatformFee($subtotal, max(1, $totalTickets));
+            }
+
+            // Check if fee is passed through to buyer or absorbed
+            $isPassthrough = $this->isFeePassthrough();
+            $total = $isPassthrough
+                ? max(0.00, round($subtotal - $discount + $serviceFee, 2))
+                : max(0.00, round($subtotal - $discount, 2));
 
             $customerName = $customerData['customer_name'] ?? ($buyer?->name ?? 'Guest Buyer');
             $customerEmail = $customerData['customer_email'] ?? ($buyer?->email ?? null);
@@ -293,5 +306,44 @@ class OrderService
         }
 
         return $count;
+    }
+
+    /**
+     * Compute platform service fee based on app settings (percentage + flat fee per ticket).
+     */
+    protected function calculatePlatformFee(float $subtotal, int $ticketCount): float
+    {
+        $settings = $this->getSettings();
+        if (! $settings) {
+            return 0.00;
+        }
+
+        $percentage = (float) $settings->platform_fee_percentage;
+        $fixed = (float) $settings->platform_fee_fixed;
+
+        $percentageFee = ($subtotal * $percentage) / 100;
+        $totalFixedFee = $fixed * max(1, $ticketCount);
+
+        return round($percentageFee + $totalFixedFee, 2);
+    }
+
+    /**
+     * Check if the platform fee should be passed onto the ticket buyer.
+     */
+    protected function isFeePassthrough(): bool
+    {
+        $settings = $this->getSettings();
+
+        return $settings ? (bool) $settings->platform_fee_passthrough : true;
+    }
+
+    /**
+     * Helper to resolve app settings service.
+     */
+    protected function getSettings()
+    {
+        $service = $this->settingsService ?? app(AppSettingsServiceInterface::class);
+
+        return $service?->getAll();
     }
 }

@@ -25,7 +25,7 @@ class SendOrganizerInvitationEmailService
         $payload = [
             'organizerName' => $emailData['organizer_name'] ?? 'Your Organization',
             'role' => $roleName,
-            'siteName' => config('app.name', 'EventsOS'),
+            'siteName' => config('app.name', 'StaytTix'),
             'invitation_link' => "{$frontendUrl}/invitations/accept?token=".($emailData['invitation_token'] ?? ''),
             'expiry_time' => isset($emailData['expires_at']) && method_exists($emailData['expires_at'], 'diffForHumans')
                 ? $emailData['expires_at']->diffForHumans()

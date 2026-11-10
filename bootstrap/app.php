@@ -17,6 +17,7 @@ use Modules\Events\app\Exceptions\EventException;
 use Modules\Organizer\app\Exceptions\OrganizerException;
 use Modules\Organizer\app\Http\Middleware\EnsureOrganizerRole;
 use Modules\Shared\app\Exceptions\ImageUploadException;
+use Modules\Shared\app\Http\Middleware\EnsureFeatureActive;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -41,10 +42,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => EnsureEmailIsVerifiedMiddleware::class,
             'organizer.role' => EnsureOrganizerRole::class,
             'admin.auth' => EnsureUserIsAdmin::class,
+            'feature' => EnsureFeatureActive::class,
+            'auth.feature' => EnsureFeatureActive::class,
         ]);
 
         // API-only app: Never redirect unauthenticated requests to a login page
         $middleware->redirectGuestsTo(fn () => null);
+
+        // Trust all upstream proxies so X-Forwarded-For headers (from Nginx, AWS ALB, Cloudflare, load test tools) are respected
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // API-only app: Always render exceptions as JSON

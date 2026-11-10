@@ -42,11 +42,11 @@ test('email template service renders template and substitutes placeholders', fun
 
     $rendered = $service->render('test_email', [
         'name' => 'Alex',
-        'siteName' => 'EventsOS',
+        'siteName' => 'StaytTix',
     ]);
 
     expect($rendered['subject'])->toBe('Hello Alex');
-    expect($rendered['body'])->toContain('Welcome to EventsOS!');
+    expect($rendered['body'])->toContain('Welcome to StaytTix!');
     expect($rendered['header'])->toContain('Header');
     expect($rendered['footer'])->toContain('Footer');
 });
@@ -62,9 +62,9 @@ test('mailer service renders and sends generic mail', function () {
         slug: 'test_email',
         data: [
             'name' => 'Sarah',
-            'siteName' => 'EventsOS',
+            'siteName' => 'StaytTix',
         ],
-        replyToEmail: 'support@eventsos.com',
+        replyToEmail: 'support@strayttix.com',
         replyToName: 'Support'
     );
 
@@ -73,7 +73,7 @@ test('mailer service renders and sends generic mail', function () {
     Mail::assertSent(GenericMail::class, function (GenericMail $mail) {
         return $mail->hasTo('user@example.com')
             && $mail->renderedSubject === 'Hello Sarah'
-            && str_contains($mail->renderedBody, 'Welcome to EventsOS!')
+            && str_contains($mail->renderedBody, 'Welcome to StaytTix!')
             && str_contains($mail->renderedBody, 'Header')
             && str_contains($mail->renderedBody, 'Footer');
     });

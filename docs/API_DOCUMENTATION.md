@@ -1,11 +1,11 @@
-# eventsOs REST API Documentation for Frontend Integration
+# StaytTix REST API Documentation for Frontend Integration
 
 > **Version**: 1.0.0  
 > **Base URL**: `http://localhost:8000/api/v1`  
 > **Auth Scheme**: HTTP Bearer Token (`Sanctum`)  
 > **Format**: `JSON`
 
-This document provides complete, production-ready specifications for the `eventsOs` backend API. It is structured so that any AI agent (e.g., Claude, ChatGPT, v0) or Frontend Developer can quickly build the web or mobile frontend interface.
+This document provides complete, production-ready specifications for the `StaytTix` backend API. It is structured so that any AI agent (e.g., Claude, ChatGPT, v0) or Frontend Developer can quickly build the web or mobile frontend interface.
 
 ---
 

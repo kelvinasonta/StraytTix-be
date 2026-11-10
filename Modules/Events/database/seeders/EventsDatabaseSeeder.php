@@ -26,7 +26,7 @@ class EventsDatabaseSeeder extends Seeder
             $user = User::first() ?? User::create([
                 'first_name' => 'John',
                 'last_name' => 'Doe',
-                'email' => 'organizer@eventsos.com',
+                'email' => 'organizer@strayttix.com',
                 'password' => bcrypt('password'),
                 'account_type' => 'organizer',
                 'email_verified_at' => now(),

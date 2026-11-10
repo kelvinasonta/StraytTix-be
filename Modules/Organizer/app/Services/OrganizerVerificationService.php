@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Models\User;
 use Modules\Organizer\app\Enum\OrganizerVerificationStatus;
+use Modules\Organizer\app\Events\OrganizerVerificationReviewedEvent;
 use Modules\Organizer\app\Models\Organizer;
 use Modules\Organizer\app\Models\OrganizerVerification;
 
@@ -122,6 +123,8 @@ class OrganizerVerificationService
                 ]
             );
 
+            event(new OrganizerVerificationReviewedEvent($verification, $reviewer, 'verified'));
+
             return $verification->fresh(['requester', 'reviewer', 'organizer']);
         });
     }
@@ -155,6 +158,8 @@ class OrganizerVerificationService
                     'reason' => $reason,
                 ]
             );
+
+            event(new OrganizerVerificationReviewedEvent($verification, $reviewer, 'rejected', $reason));
 
             return $verification->fresh(['requester', 'reviewer', 'organizer']);
         });

@@ -31,6 +31,11 @@ class AppSettingsRequest extends FormRequest
             'support_email' => ['email', 'nullable'],
             'timezone' => ['string', 'nullable'],
             'currency_id' => ['integer', 'nullable'],
+            'platform_fee_percentage' => ['numeric', 'min:0', 'max:100', 'nullable'],
+            'platform_fee_fixed' => ['numeric', 'min:0', 'nullable'],
+            'platform_fee_passthrough' => ['boolean', 'nullable'],
+            'ticket_fee_percentage' => ['numeric', 'min:0', 'max:100', 'nullable'],
+            'ticket_fee_fixed' => ['numeric', 'min:0', 'nullable'],
         ];
     }
 

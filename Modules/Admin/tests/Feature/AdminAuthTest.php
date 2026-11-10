@@ -28,7 +28,7 @@ test('unauthenticated request to admin routes is rejected', function () {
 
 test('admin can log in and receive admin token and profile', function () {
     $admin = User::factory()->create([
-        'email' => 'ops@eventsos.internal',
+        'email' => 'ops@strayttix.internal',
         'password' => 'SecureAdminPass123!',
         'is_admin' => true,
         'admin_role' => 'kyc_reviewer',
@@ -36,14 +36,14 @@ test('admin can log in and receive admin token and profile', function () {
     ]);
 
     $response = $this->postJson('/api/v1/admin/auth/login', [
-        'email' => 'ops@eventsos.internal',
+        'email' => 'ops@strayttix.internal',
         'password' => 'SecureAdminPass123!',
         'device_name' => 'Admin Test Suite',
     ]);
 
     $response->assertStatus(200)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.admin.email', 'ops@eventsos.internal')
+        ->assertJsonPath('data.admin.email', 'ops@strayttix.internal')
         ->assertJsonPath('data.admin.admin_role', 'kyc_reviewer')
         ->assertJsonStructure([
             'data' => [
@@ -56,13 +56,13 @@ test('admin can log in and receive admin token and profile', function () {
 
 test('regular customer cannot log in through admin portal', function () {
     User::factory()->create([
-        'email' => 'customer@eventsos.test',
+        'email' => 'customer@strayttix.test',
         'password' => 'CustomerPass123!',
         'is_admin' => false,
     ]);
 
     $response = $this->postJson('/api/v1/admin/auth/login', [
-        'email' => 'customer@eventsos.test',
+        'email' => 'customer@strayttix.test',
         'password' => 'CustomerPass123!',
     ]);
 

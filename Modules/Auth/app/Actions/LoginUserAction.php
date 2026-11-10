@@ -3,6 +3,7 @@
 namespace Modules\Auth\app\Actions;
 
 use Illuminate\Support\Facades\Hash;
+use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\DTOs\LoginDTO;
 use Modules\Auth\app\Enum\UserStatus;
 use Modules\Auth\app\Events\LoginAttemptEvent;
@@ -12,6 +13,10 @@ use Modules\Auth\app\Models\User;
 
 class LoginUserAction
 {
+    public function __construct(
+        protected AuditService $auditService
+    ) {}
+
     /**
      * Checks if the user is active and exists then login the user
      */
@@ -20,7 +25,6 @@ class LoginUserAction
         $user = User::where('email', $dto->email)->first();
 
         if (! $user) {
-
             $this->logLoginAttempt(null, $dto->email, false, $meta['ip'], $meta['userAgent']);
 
             throw new InvalidCredentialsException;
@@ -31,13 +35,24 @@ class LoginUserAction
         }
 
         if (! Hash::check($dto->password, $user->password)) {
-
             $this->logLoginAttempt($user, $dto->email, false, $meta['ip'], $meta['userAgent']);
 
             throw new InvalidCredentialsException;
         }
 
+        // Log user attempts
         $this->logLoginAttempt($user, $dto->email, true, $meta['ip'], $meta['userAgent']);
+
+        // Log user activity
+        $this->auditService->log(
+            action: 'user.login_success',
+            description: "User [{$user->id}] logged in successfully.",
+            user: $user,
+            metadata: [
+                'ip' => $meta['ip'],
+                'user_agent' => $meta['userAgent'],
+            ]
+        );
 
         return $user;
     }

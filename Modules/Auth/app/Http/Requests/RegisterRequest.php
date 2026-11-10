@@ -24,8 +24,8 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'required|string|min:3|max:255',
-            'last_name' => 'required|string|min:3|max:255',
+            'first_name' => 'required|string|min:2|max:255',
+            'last_name' => 'required|string|min:2|max:255',
             'email' => 'required|string|unique:users,email|email:rfc',
             'phone' => ['nullable', 'string', 'regex:/^\+?[1-9]\d{1,14}$/'],
             'timezone' => ['nullable', 'string', 'timezone'],
@@ -56,12 +56,12 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'firstname.required' => 'First name is required',
-            'lastname.required' => 'Last name is required',
-            'firstname.min' => 'First name must be at least 3 characters',
-            'lastname.min' => 'Last name must be at least 3 characters',
-            'firstname.max' => 'First name must not exceed 255 characters',
-            'lastname.max' => 'Last name must not exceed 255 characters',
+            'first_name.required' => 'First name is required',
+            'last_name.required' => 'Last name is required',
+            'first_name.min' => 'First name must be at least 2 characters',
+            'last_name.min' => 'Last name must be at least 2 characters',
+            'first_name.max' => 'First name must not exceed 255 characters',
+            'last_name.max' => 'Last name must not exceed 255 characters',
             'email.required' => 'Email is required',
             'email.string' => 'Email must be a string',
             'email.unique' => 'Email is already taken',

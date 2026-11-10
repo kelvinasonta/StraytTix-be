@@ -256,6 +256,24 @@ class EventsController extends Controller
      */
     public function explore(Request $request): JsonResponse
     {
+        $hasFilters = $request->hasAny(['search', 'eventType', 'category', 'organizerUuid', 'perPage', 'page']);
+
+        if (! $hasFilters) {
+            $cached = cache()->remember('api:explore:events:default', 60, function () use ($request) {
+                $events = $this->eventService->getPublicEvents($request->only([
+                    'search',
+                    'eventType',
+                    'category',
+                    'organizerUuid',
+                    'perPage',
+                ]));
+
+                return EventResource::collection($events)->response()->getData(true);
+            });
+
+            return ApiResponse::success('Public events retrieved.', $cached);
+        }
+
         $events = $this->eventService->getPublicEvents($request->only([
             'search',
             'eventType',

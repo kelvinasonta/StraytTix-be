@@ -162,5 +162,9 @@ class DatabaseSeeder extends Seeder
         foreach ($emailSettings as $emailSetting) {
             EmailSettings::create($emailSetting);
         }
+
+        $this->call([
+            AuthFeatureFlagSeeder::class,
+        ]);
     }
 }

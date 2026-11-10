@@ -2,6 +2,7 @@
 
 namespace Modules\Auth\database\seeders;
 
+use Database\Seeders\AuthFeatureFlagSeeder;
 use Illuminate\Database\Seeder;
 
 class AuthDatabaseSeeder extends Seeder
@@ -11,6 +12,8 @@ class AuthDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            AuthFeatureFlagSeeder::class,
+        ]);
     }
 }

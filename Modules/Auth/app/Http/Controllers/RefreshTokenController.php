@@ -23,7 +23,7 @@ class RefreshTokenController extends Controller
         // Issue a new token with 2 hours expiration
         $expiresAt = now()->addHours(2);
         $newToken = $user->createToken(
-            $request->userAgent() ?? 'eventsOs-client',
+            $request->userAgent() ?? 'StaytTix-client',
             ['*'],
             $expiresAt
         )->plainTextToken;
