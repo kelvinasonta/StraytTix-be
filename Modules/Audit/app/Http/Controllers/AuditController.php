@@ -27,7 +27,7 @@ class AuditController extends Controller
 
         $logs = $this->auditService->getOrganizerLogs(
             $organizer,
-            $request->only(['action', 'search', 'startDate', 'endDate', 'perPage'])
+            $request->only(['action', 'search', 'startDate', 'start_date', 'endDate', 'end_date', 'perPage', 'per_page'])
         );
 
         return ApiResponse::success(

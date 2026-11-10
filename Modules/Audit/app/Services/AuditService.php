@@ -112,15 +112,17 @@ class AuditService
             });
         }
 
-        if (! empty($filters['startDate'])) {
-            $query->where('created_at', '>=', $filters['startDate']);
+        if (! empty($filters['startDate']) || ! empty($filters['start_date'])) {
+            $startDate = $filters['startDate'] ?? $filters['start_date'];
+            $query->where('created_at', '>=', $startDate);
         }
 
-        if (! empty($filters['endDate'])) {
-            $query->where('created_at', '<=', $filters['endDate']);
+        if (! empty($filters['endDate']) || ! empty($filters['end_date'])) {
+            $endDate = $filters['endDate'] ?? $filters['end_date'];
+            $query->where('created_at', '<=', $endDate);
         }
 
-        $perPage = min(max((int) ($filters['perPage'] ?? 15), 1), 100);
+        $perPage = min(max((int) ($filters['perPage'] ?? $filters['per_page'] ?? 15), 1), 100);
 
         return $query->latest('id')->paginate($perPage);
     }
@@ -130,7 +132,7 @@ class AuditService
      */
     public function getUserLogs(User $user, array $filters = []): LengthAwarePaginator
     {
-        $query = ActivityLog::forUser($user);
+        $query = ActivityLog::forUser($user)->with(['user']);
 
         if (! empty($filters['action'])) {
             $query->byAction($filters['action']);
