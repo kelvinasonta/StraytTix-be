@@ -12,6 +12,7 @@ use Modules\Events\app\Models\Event;
 use Modules\Events\app\Policies\EventPolicy;
 use Modules\Organizer\app\Models\Organizer;
 use Modules\Organizer\app\Policies\OrganizerPolicy;
+use Modules\Shared\app\Enum\SystemFeature;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,5 +39,10 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::none();
         });
+
+        // Register default states for all system feature flags
+        foreach (SystemFeature::cases() as $systemFeature) {
+            Feature::define($systemFeature->value, fn () => $systemFeature->defaultActive());
+        }
     }
 }

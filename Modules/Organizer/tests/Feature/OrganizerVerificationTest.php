@@ -44,12 +44,12 @@ test('organizer owner can request verification with valid business details and d
             [
                 'type' => 'cac_certificate',
                 'name' => 'CAC Registration Certificate',
-                'url' => 'https://storage.eventsos.ng/documents/cac_apex.pdf',
+                'url' => 'https://storage.strayttix.ng/documents/cac_apex.pdf',
             ],
             [
                 'type' => 'tax_clearance',
                 'name' => 'Tax Clearance Certificate',
-                'url' => 'https://storage.eventsos.ng/documents/tax_apex.pdf',
+                'url' => 'https://storage.strayttix.ng/documents/tax_apex.pdf',
             ],
         ],
     ];
@@ -94,7 +94,7 @@ test('organizer admin can also request verification', function () {
         'documents' => [
             [
                 'type' => 'cac_certificate',
-                'url' => 'https://storage.eventsos.ng/documents/cac_apex.pdf',
+                'url' => 'https://storage.strayttix.ng/documents/cac_apex.pdf',
             ],
         ],
     ];
@@ -131,7 +131,7 @@ test('staff role cannot submit verification request', function () {
         'documents' => [
             [
                 'type' => 'cac_certificate',
-                'url' => 'https://storage.eventsos.ng/documents/cac_apex.pdf',
+                'url' => 'https://storage.strayttix.ng/documents/cac_apex.pdf',
             ],
         ],
     ];
@@ -165,7 +165,7 @@ test('cannot submit verification request if one is already pending review', func
             'documents' => [
                 [
                     'type' => 'cac_certificate',
-                    'url' => 'https://storage.eventsos.ng/documents/cac_apex.pdf',
+                    'url' => 'https://storage.strayttix.ng/documents/cac_apex.pdf',
                 ],
             ],
         ]
@@ -191,7 +191,7 @@ test('cannot submit verification request if organization is already verified', f
             'documents' => [
                 [
                     'type' => 'cac_certificate',
-                    'url' => 'https://storage.eventsos.ng/documents/cac_apex.pdf',
+                    'url' => 'https://storage.strayttix.ng/documents/cac_apex.pdf',
                 ],
             ],
         ]

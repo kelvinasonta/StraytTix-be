@@ -87,6 +87,8 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
     $totalRequests = 20;
     $debitAmount = 10;
     $pids = [];
+    $resultsDir = sys_get_temp_dir().'/credits_conc_'.uniqid();
+    @mkdir($resultsDir, 0777, true);
 
     // Fork 20 concurrent worker processes
     for ($i = 0; $i < $totalRequests; $i++) {
@@ -95,7 +97,6 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
         if ($pid === -1) {
             $this->fail('Failed to fork child process for concurrency test');
         } elseif ($pid === 0) {
-            // Child worker process
             $childPdo = new PDO('sqlite:'.$tempDbPath);
             $childPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $childPdo->setAttribute(PDO::ATTR_TIMEOUT, 15);
@@ -113,7 +114,8 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
                     $idemStmt->execute([$wallet->id, $idempotencyKey]);
                     if ($idemStmt->fetch()) {
                         $childPdo->exec('COMMIT;');
-                        posix__exit(0);
+                        file_put_contents("{$resultsDir}/{$i}.success", '1');
+                        posix_kill(posix_getpid(), SIGKILL);
                     }
 
                     // Select wallet with row lock equivalent (IMMEDIATE transaction holds reserved lock)
@@ -127,7 +129,8 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
 
                     if ($available < $debitAmount) {
                         $childPdo->exec('ROLLBACK;');
-                        posix__exit(2); // Insufficient credits code
+                        file_put_contents("{$resultsDir}/{$i}.insufficient", '1');
+                        posix_kill(posix_getpid(), SIGKILL);
                     }
 
                     $balanceAfter = $balance - $debitAmount;
@@ -154,7 +157,8 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
 
                     $childPdo->exec('COMMIT;');
                     $processed = true;
-                    posix__exit(0); // Success code
+                    file_put_contents("{$resultsDir}/{$i}.success", '1');
+                    posix_kill(posix_getpid(), SIGKILL);
                 } catch (PDOException $e) {
                     try {
                         $childPdo->exec('ROLLBACK;');
@@ -168,33 +172,29 @@ test('parallel double-spend concurrency test prevents negative balance under 20 
                         continue;
                     }
 
-                    posix__exit(1); // Unexpected error code
+                    file_put_contents("{$resultsDir}/{$i}.error", $e->getMessage());
+                    posix_kill(posix_getpid(), SIGKILL);
                 }
             }
 
-            posix__exit(1);
+            file_put_contents("{$resultsDir}/{$i}.error", 'max_retries_exceeded');
+            posix_kill(posix_getpid(), SIGKILL);
         } else {
             $pids[] = $pid;
         }
     }
 
     // Wait for all child processes to complete
-    $successCount = 0;
-    $insufficientCount = 0;
-    $errorCount = 0;
-
     foreach ($pids as $pid) {
         pcntl_waitpid($pid, $status);
-        $exitCode = pcntl_wexitstatus($status);
-
-        if ($exitCode === 0) {
-            $successCount++;
-        } elseif ($exitCode === 2) {
-            $insufficientCount++;
-        } else {
-            $errorCount++;
-        }
     }
+
+    $successCount = count(glob("{$resultsDir}/*.success"));
+    $insufficientCount = count(glob("{$resultsDir}/*.insufficient"));
+    $errorCount = count(glob("{$resultsDir}/*.error"));
+
+    array_map('unlink', glob("{$resultsDir}/*"));
+    @rmdir($resultsDir);
 
     $verifyPdo = new PDO('sqlite:'.$tempDbPath);
     $finalBalance = (int) $verifyPdo->query('SELECT balance FROM organizer_credit_wallets WHERE id = '.$wallet->id)->fetchColumn();

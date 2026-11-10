@@ -9,11 +9,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laravel\Pennant\Feature;
 use Modules\Audit\app\Services\AuditService;
+use Modules\Shared\app\Services\FeatureFlagService;
 
 class FeatureFlagController extends Controller
 {
     public function __construct(
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected FeatureFlagService $featureFlagService
     ) {}
 
     /**
@@ -32,6 +34,9 @@ class FeatureFlagController extends Controller
         } else {
             Feature::for('global')->deactivate($feature);
         }
+
+        // Invalidate global persistent cache
+        $this->featureFlagService->clearCache();
 
         $this->auditService->log(
             action: 'feature_flag.toggled',

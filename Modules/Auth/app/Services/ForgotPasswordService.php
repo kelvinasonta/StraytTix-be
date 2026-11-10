@@ -4,6 +4,7 @@ namespace Modules\Auth\app\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Actions\ForgotPasswordAction;
 use Modules\Auth\app\Events\ForgotPasswordEvent;
 use Modules\Auth\app\Exceptions\AuthException;
@@ -13,6 +14,7 @@ class ForgotPasswordService
 {
     public function __construct(
         private ForgotPasswordAction $forgotPasswordAction,
+        private AuditService $auditService,
     ) {}
 
     /**
@@ -36,6 +38,16 @@ class ForgotPasswordService
                 ];
 
                 event(new ForgotPasswordEvent($emailData));
+
+                $this->auditService->log(
+                    action: 'user.password_reset_requested',
+                    description: "Password reset request initiated for {$user->email}",
+                    user: $user,
+                    metadata: [
+                        'ip' => $ip,
+                        'user_agent' => $userAgent,
+                    ]
+                );
             }
 
             return true;

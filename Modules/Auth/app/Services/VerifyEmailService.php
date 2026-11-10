@@ -4,6 +4,7 @@ namespace Modules\Auth\app\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Actions\VerifyEmailAction;
 use Modules\Auth\app\DTOs\VerifyEmailDTO;
 use Modules\Auth\app\Events\EmailVerifiedEvent;
@@ -13,7 +14,10 @@ use Modules\Auth\app\Transformers\UserResource;
 
 class VerifyEmailService
 {
-    public function __construct(private VerifyEmailAction $verifyEmailAction) {}
+    public function __construct(
+        private VerifyEmailAction $verifyEmailAction,
+        private AuditService $auditService
+    ) {}
 
     public function execute(VerifyEmailDTO $dto): array
     {
@@ -30,6 +34,15 @@ class VerifyEmailService
             ];
 
             event(new EmailVerifiedEvent($userData));
+
+            $this->auditService->log(
+                action: 'user.email_verified',
+                description: "Email address verified successfully for {$user->email}",
+                user: $user,
+                metadata: [
+                    'email' => $user->email,
+                ]
+            );
 
             $data = [
                 'user' => new UserResource($user),

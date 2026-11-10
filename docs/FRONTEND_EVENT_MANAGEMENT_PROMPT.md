@@ -1,11 +1,11 @@
 # Frontend Event Management Implementation Prompt
 
-Use the prompt below with any AI coding assistant (v0, Cursor, Claude Code, ChatGPT, etc.) to generate or update the frontend implementation for Event Management in `eventsos-auth-web`.
+Use the prompt below with any AI coding assistant (v0, Cursor, Claude Code, ChatGPT, etc.) to generate or update the frontend implementation for Event Management in `strayttix-auth-web`.
 
 ---
 
 ```markdown
-You are an expert React + TypeScript frontend engineer. Your task is to implement the complete Event Management module for "eventsOs", an event management SaaS platform.
+You are an expert React + TypeScript frontend engineer. Your task is to implement the complete Event Management module for "StaytTix", an event management SaaS platform.
 
 ### Tech Stack
 - Framework: React (Vite) + TypeScript

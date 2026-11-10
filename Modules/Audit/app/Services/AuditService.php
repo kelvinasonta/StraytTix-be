@@ -124,4 +124,38 @@ class AuditService
 
         return $query->latest('id')->paginate($perPage);
     }
+
+    /**
+     * Get paginated activity logs for an individual user (self-service user audit trail).
+     */
+    public function getUserLogs(User $user, array $filters = []): LengthAwarePaginator
+    {
+        $query = ActivityLog::forUser($user);
+
+        if (! empty($filters['action'])) {
+            $query->byAction($filters['action']);
+        }
+
+        if (! empty($filters['search'])) {
+            $search = '%'.$filters['search'].'%';
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', $search)
+                    ->orWhere('action', 'like', $search);
+            });
+        }
+
+        if (! empty($filters['startDate']) || ! empty($filters['start_date'])) {
+            $startDate = $filters['startDate'] ?? $filters['start_date'];
+            $query->where('created_at', '>=', $startDate);
+        }
+
+        if (! empty($filters['endDate']) || ! empty($filters['end_date'])) {
+            $endDate = $filters['endDate'] ?? $filters['end_date'];
+            $query->where('created_at', '<=', $endDate);
+        }
+
+        $perPage = min(max((int) ($filters['perPage'] ?? $filters['per_page'] ?? 15), 1), 100);
+
+        return $query->latest('id')->paginate($perPage);
+    }
 }

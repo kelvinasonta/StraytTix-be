@@ -11,6 +11,7 @@ use Modules\Audit\app\Services\AuditService;
 use Modules\Payments\app\Enums\OrderStatus;
 use Modules\Payments\app\Enums\PaymentGateway;
 use Modules\Payments\app\Enums\PaymentStatus;
+use Modules\Payments\app\Events\OrderPaidEvent;
 use Modules\Payments\app\Exceptions\OrderException;
 use Modules\Payments\app\Models\Order;
 use Modules\Payments\app\Models\Payment;
@@ -182,6 +183,9 @@ class PaymentService
                     'payment_reference' => $payment->reference,
                 ]
             );
+
+            // Dispatch OrderPaidEvent for attendee tickets email & organizer sale alert
+            event(new OrderPaidEvent($order, $payment));
 
             return $order->fresh(['items.ticketType', 'tickets.ticketType', 'payments']);
         });

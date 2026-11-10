@@ -4,6 +4,7 @@ namespace Modules\Auth\app\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\Actions\CreateEmailVerificationAction;
 use Modules\Auth\app\Actions\RegisterUserAction;
 use Modules\Auth\app\DTOs\RegisterDTO;
@@ -20,6 +21,7 @@ class RegisterService
         private RegisterUserAction $registerUserAction,
         private CreateEmailVerificationAction $createEmailVerificationAction,
         private CreateOrganizerAction $createOrganizerAction,
+        private AuditService $auditService,
     ) {}
 
     /**
@@ -40,6 +42,8 @@ class RegisterService
                     $organizer = $this->createOrganizerAction->handle($user, $registerDto);
                 }
 
+                // Email verification Feature Flag
+
                 $result = $this->createEmailVerificationAction->handle([
                     'user_id' => $user->id,
                     'expires_at' => now()->addMinutes(30),
@@ -48,8 +52,8 @@ class RegisterService
                 return [
                     'user' => $user,
                     'organizer' => $organizer ?? null,
-                    'token' => $result['token'],
-                    'expires_at' => $result['expires_at'],
+                    'token' => $result['token'] ?? null,
+                    'expires_at' => $result['expires_at'] ?? null,
                 ];
             });
 
@@ -66,6 +70,17 @@ class RegisterService
             event(new UserRegisteredEvent($userData));
 
             $expiresAt = now()->addHours(2);
+
+            $this->auditService->log(
+                action: 'user.registered',
+                description: "Account registered successfully for {$user->email}",
+                organizer: $organizer,
+                user: $user,
+                metadata: [
+                    'account_type' => $user->account_type,
+                    'user_agent' => $userAgent,
+                ]
+            );
 
             return [
                 'user' => new UserResource($user),

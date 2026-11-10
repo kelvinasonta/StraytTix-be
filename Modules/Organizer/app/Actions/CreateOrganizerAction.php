@@ -4,7 +4,6 @@ namespace Modules\Organizer\app\Actions;
 
 use Illuminate\Support\Str;
 use Modules\Auth\app\DTOs\RegisterDTO;
-// use Modules\Organizer\app\Enum\OrganizerType;
 use Modules\Auth\app\Models\User;
 use Modules\Organizer\app\Models\Organizer;
 use Modules\Organizer\app\Models\OrganizerMember;

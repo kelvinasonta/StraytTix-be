@@ -15,7 +15,7 @@ class SendPasswordChangeEmailService
     public function execute(array $emailData): void
     {
         $name = $emailData['userName'] ?? $emailData['name'] ?? $emailData['first_name'] ?? 'User';
-        $siteName = config('app.name', 'EventsOS');
+        $siteName = config('app.name', 'StraytTix');
 
         $this->mailerService->send(
             $emailData['email'],

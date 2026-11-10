@@ -28,8 +28,15 @@ class ResendEmailVerificationService
             ->first()
             ?->last_sent_at;
 
-        if ($lastSentTime && $lastSentTime->addMinutes(15) > now()) {
-            throw new ResendEmailVerificationFailedException('You can only resend verification email every 15 minutes', 422, 'RESEND_EMAIL_VERIFICATION_FAILED_TOO_SOON');
+        if ($lastSentTime && $lastSentTime->copy()->addMinutes(15) > now()) {
+            $retryAfter = (int) max(1, ceil(now()->diffInSeconds($lastSentTime->copy()->addMinutes(15), false)));
+
+            throw new ResendEmailVerificationFailedException(
+                "You can only resend verification email every 15 minutes. Please try again in {$retryAfter} seconds.",
+                422,
+                'RESEND_EMAIL_VERIFICATION_FAILED_TOO_SOON',
+                ['retry_after' => $retryAfter]
+            );
         }
 
         try {

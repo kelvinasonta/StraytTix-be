@@ -17,7 +17,7 @@ class SendForgotPasswordEmailService
             'forgot_password',
             [
                 'name' => $emailData['firstName'],
-                'siteName' => 'TestMan LTD',
+                'siteName' => config('app.name', 'StraytTix'),
                 'reset_link' => config('app.frontend_url').'/reset-password?token='.($emailData['token'] ?? ''),
                 'expiry_time' => isset($emailData['expires_at']) ? $emailData['expires_at']->diffForHumans() : '30 minutes',
             ]

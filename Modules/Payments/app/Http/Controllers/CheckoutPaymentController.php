@@ -83,6 +83,21 @@ class CheckoutPaymentController extends Controller
         $payload = $request->all();
 
         if (strtolower($gateway) === 'paystack') {
+            $secretKey = config('paystack.secret_key');
+            $signature = $request->header('x-paystack-signature');
+
+            // Verify Paystack HMAC SHA512 signature in production / non-testing environments
+            if (! empty($secretKey) && ! app()->environment('testing')) {
+                $computedSignature = hash_hmac('sha512', $request->getContent(), $secretKey);
+                if (! hash_equals($computedSignature, (string) $signature)) {
+                    Log::warning('Paystack webhook invalid signature detected.', [
+                        'ip' => $request->ip(),
+                    ]);
+
+                    return response()->json(['status' => 'error', 'message' => 'Invalid signature.'], 400);
+                }
+            }
+
             $event = $payload['event'] ?? '';
             $reference = $payload['data']['reference'] ?? null;
 

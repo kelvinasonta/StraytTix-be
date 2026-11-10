@@ -5,6 +5,7 @@ namespace Modules\Auth\app\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
+use Modules\Audit\app\Services\AuditService;
 use Modules\Auth\app\DTOs\PasswordUpdateDTO;
 use Modules\Auth\app\DTOs\ProfileUpdateDTO;
 use Modules\Auth\app\Http\Requests\UpdatePasswordRequest;
@@ -15,7 +16,8 @@ use Modules\Auth\app\Transformers\UserResource;
 class ProfileController extends Controller
 {
     public function __construct(
-        private ProfileService $profileService
+        private ProfileService $profileService,
+        private AuditService $auditService
     ) {}
 
     public function update(UpdateProfileRequest $request)
@@ -46,6 +48,16 @@ class ProfileController extends Controller
     public function destroy(Request $request)
     {
         $user = $request->user();
+
+        $this->auditService->log(
+            action: 'user.account_deleted',
+            description: "Account was deleted by user {$user->email}",
+            user: $user,
+            metadata: [
+                'user_uuid' => $user->uuid,
+                'email' => $user->email,
+            ]
+        );
 
         // Revoke all tokens
         $user->tokens()->delete();

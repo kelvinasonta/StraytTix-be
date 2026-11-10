@@ -4,7 +4,9 @@ namespace Modules\Organizer\app\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\Organizer\app\Events\OrganizerInvitationCreatedEvent;
+use Modules\Organizer\app\Events\OrganizerVerificationReviewedEvent;
 use Modules\Organizer\app\Listeners\OrganizerInvitationCreatedListener;
+use Modules\Organizer\app\Listeners\SendOrganizerVerificationEmailListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,9 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         OrganizerInvitationCreatedEvent::class => [
             OrganizerInvitationCreatedListener::class,
+        ],
+        OrganizerVerificationReviewedEvent::class => [
+            SendOrganizerVerificationEmailListener::class,
         ],
     ];
 

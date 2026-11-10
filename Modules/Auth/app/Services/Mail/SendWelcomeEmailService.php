@@ -17,7 +17,7 @@ class SendWelcomeEmailService
             'welcome',
             [
                 'name' => $userData['firstName'],
-                'siteName' => 'TestMan LTD',
+                'siteName' => config('app.name', 'StraytTix'),
             ]
         );
     }

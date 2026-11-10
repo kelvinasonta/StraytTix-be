@@ -3,9 +3,12 @@
 namespace Modules\Shared\app\Providers;
 
 use Modules\Shared\app\Cache\AppSettingsCache;
+use Modules\Shared\app\Cache\FeatureFlagCache;
 use Modules\Shared\app\Contracts\AppSettingsServiceInterface;
+use Modules\Shared\app\Contracts\FeatureFlagServiceInterface;
 use Modules\Shared\app\Contracts\ImageUploadServiceInterface;
 use Modules\Shared\app\Services\AppSettingsService;
+use Modules\Shared\app\Services\FeatureFlagService;
 use Modules\Shared\app\Services\ImageUploadService;
 use Modules\Shared\app\Services\Security\ImageProcessor;
 use Modules\Shared\app\Services\Security\ImageSecurityScanner;
@@ -50,5 +53,12 @@ class SharedServiceProvider extends ModuleServiceProvider
             AppSettingsServiceInterface::class,
             AppSettingsService::class
         );
+
+        $this->app->singleton(FeatureFlagCache::class);
+        $this->app->singleton(
+            FeatureFlagServiceInterface::class,
+            FeatureFlagService::class
+        );
+        $this->app->singleton(FeatureFlagService::class);
     }
 }

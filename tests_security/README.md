@@ -1,6 +1,6 @@
 # Automated API Security Test Suite (OWASP API Security Top 10)
 
-This directory contains an automated Python `pytest` security auditing suite for the EventsOS API.
+This directory contains an automated Python `pytest` security auditing suite for the StaytTix API.
 
 ## Requirements & Setup
 

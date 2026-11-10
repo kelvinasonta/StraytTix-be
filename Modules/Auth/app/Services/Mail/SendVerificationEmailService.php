@@ -17,7 +17,7 @@ class SendVerificationEmailService
             'user_verification',
             [
                 'name' => $userData['firstName'],
-                'siteName' => 'TestMan LTD',
+                'siteName' => config('app.name', 'StraytTix'),
                 'verification_link' => config('app.frontend_url').'/verify-email?token='.($userData['token'] ?? ''),
                 'expiry_time' => isset($userData['expires_at']) ? $userData['expires_at']->diffForHumans() : '30 minutes',
             ]
